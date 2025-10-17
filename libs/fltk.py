@@ -553,6 +553,34 @@ def image(
     )
     return img_object
 
+@_fenetre_cree
+def image_memoire(
+        x: float,
+        y: float,
+        tk_image: PhotoImage,
+        ancrage: Anchor = "center",
+        tag: str = "",
+) -> int:
+    """
+    Affiche l'image ``tk_image`` avec ``(x, y)`` comme centre. Les
+    valeurs possibles du point d'ancrage sont ``'center'``, ``'nw'``,
+    etc. Les arguments optionnels ``largeur`` et ``hauteur`` permettent de
+    spécifier des dimensions maximales pour l'image (sans changement de
+    proportions).
+
+    :param float x: abscisse du point d'ancrage
+    :param float y: ordonnée du point d'ancrage
+    :param PhotoImage tk_image: image que l'on souhait dessiner
+    :param ancrage: position du point d'ancrage par rapport à l'image
+    :param str tag: étiquette d'objet (défaut : pas d'étiquette)
+    :return: identificateur d'objet
+    """
+    assert __canevas is not None
+    img_object = __canevas.canvas.create_image(
+        x, y, anchor=ancrage, image=tk_image, tags=tag
+    )
+    return img_object
+
 
 def _load_tk_image(fichier: str,
                    hauteur: Optional[int] = None,
