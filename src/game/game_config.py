@@ -1,1 +1,4 @@
-TARGET_FPS = 80
+
+
+WINDOW_SIZE = [800, 800]
+EXIT_KEY = "Escape"
