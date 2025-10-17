@@ -6,6 +6,6 @@
 *.psd
 
 # useless images
-"assets/Room Tileset.png"
+assets/Room\ Tileset.png
 assets/blocks.png
 
