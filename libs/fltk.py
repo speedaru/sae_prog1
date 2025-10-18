@@ -785,6 +785,15 @@ def attend_clic_gauche() -> Tuple[int, int]:
             return x, y
         mise_a_jour()
 
+# si click gauche est presse alors renvoie les coordonee de la souris, sinon renvoie [-1, -1]
+def click_gauche() -> Tuple[int, int]:
+    ev = donne_ev()
+    if ev is not None and type_ev(ev) == "ClicGauche":
+        x, y = abscisse(ev), ordonnee(ev)
+        assert isinstance(x, int) and isinstance(y, int)
+        return x, y
+    else:
+        return (-1, -1)
 
 def attend_fermeture() -> None:
     """Attend la fermeture de la fenêtre. Cette fonction renvoie None.

@@ -69,4 +69,4 @@ def asset_manager_get_block(block_idx: int, rotation_count: int) -> PhotoImage |
     if isinstance(block, NoneType):
         return None
 
-    return block[rotation_count % len(block)];
+    return block[rotation_count % len(block)]

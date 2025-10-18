@@ -12,24 +12,48 @@ from src.engine.structs.dungeon import *
 
 import src.game.game_config as game_config
 import src.game.gui as gui
+import src.game.start_menu as start_menu
 
 
-def render(dungeon: DungeonT | NoneType):
-    if not asset_manager_initialized():
-        asset_manager_init()
+current_dungeon: DungeonT | NoneType = None
 
+def render_start_menu():
+    global current_dungeon
+
+    selected_dungeon: DungeonT | NoneType = start_menu.render()
+
+    # if no dungeon selected
+    if selected_dungeon == None:
+        return
+
+    # set dungeon that was selected (clicked)
+    current_dungeon = selected_dungeon
+
+def render_dungeon(dungeon: DungeonT):
     # only render if not NoneType and at least 1 row
     if not isinstance(dungeon, NoneType) and len(dungeon) > 0:
         dungeon_render(dungeon)
 
+def render():
+    global current_dungeon
+
+    if not asset_manager_initialized():
+        asset_manager_init()
+
+    # if no dungeon selected then render the start_menu, otherwise render the dungeon
+    if isinstance(current_dungeon, NoneType):
+        render_start_menu()
+    else:
+        render_dungeon(current_dungeon)
+
 
 def main_loop():
-    last_frame_start = 0
+    last_frame_start: float = 0
 
     fps_interval_s: float = fps_manager.get_target_fps_interval_ms(engine_config.TARGET_FPS) / 1000
     log_debug_full(f"target fps interval ms: {fps_interval_s}")
 
-    dungeon: DungeonT = list()
+    dungeon: DungeonT = DungeonT()
 
     # dungeon_file_name = "dungeon_easy.txt"
     dungeon_file_name = "dungeon_hard.txt"
@@ -48,7 +72,7 @@ def main_loop():
             break
 
         gui.start_render()
-        render(dungeon)
+        render()
         gui.render()
 
         time.sleep(fps_interval_s)
