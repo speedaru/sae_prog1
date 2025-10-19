@@ -7,7 +7,6 @@ from src.utils.logging import log_release, log_debug, log_debug_full
 from src.engine.asset_manager import *
 import src.engine.engine_config as engine_config
 import src.engine.fps_manager as fps_manager
-# import src.engine.asset_manager as asset_manager
 from src.engine.structs.dungeon import *
 
 import src.game.game_config as game_config
@@ -16,6 +15,7 @@ import src.game.start_menu as start_menu
 
 
 current_dungeon: DungeonT | NoneType = None
+
 
 def render_start_menu():
     global current_dungeon
@@ -53,16 +53,18 @@ def main_loop():
     fps_interval_s: float = fps_manager.get_target_fps_interval_ms(engine_config.TARGET_FPS) / 1000
     log_debug_full(f"target fps interval ms: {fps_interval_s}")
 
-    dungeon: DungeonT = DungeonT()
+    # dungeon: DungeonT = DungeonT()
+    #
+    # # dungeon_file_name = "dungeon_easy.txt"
+    # dungeon_file_name = "dungeon_hard.txt"
+    # if not dungeon_parse_file(os.path.join(DUNGEON_FILES_DIR, dungeon_file_name), dungeon):
+    #     log_release(f"[main_loop] failed to parse {dungeon_file_name}")
+    #
+    # dungeon_print_values(dungeon)
 
-    # dungeon_file_name = "dungeon_easy.txt"
-    dungeon_file_name = "dungeon_hard.txt"
-    if not dungeon_parse_file(os.path.join(DUNGEON_FILES_DIR, dungeon_file_name), dungeon):
-        log_release(f"[main_loop] failed to parse {dungeon_file_name}")
-
-    dungeon_print_values(dungeon)
-
-    gui.create_window()
+    window_title = "Wall Is You"
+    window_icon_file = os.path.join(ASSETS_DIR, "game_icon.ico")
+    gui.create_window(window_title, window_icon_file)
 
     while True:
         last_frame_start = fps_manager.get_ctime_ms()

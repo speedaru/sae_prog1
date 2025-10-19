@@ -86,6 +86,7 @@ def dungeon_print_values(dungeon: DungeonT):
         print(row)
 
 def dungeon_room_render(x: float, y: float, room: RoomT):
+    fltk.image_memoire(x, y, asset_manager_get_block(BLOCK_WALL_BACKGROUND, 0), ancrage="nw")
     fltk.image_memoire(x, y, asset_manager_get_block(room[0], room[1]), ancrage="nw")
 
 def dungeon_render(dungeon: DungeonT):
