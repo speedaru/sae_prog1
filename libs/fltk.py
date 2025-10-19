@@ -248,6 +248,14 @@ def cree_fenetre(
         )
     __canevas = CustomCanvas(largeur, hauteur, frequence, resizing=redimension)
 
+def fenetre_titre(nouveau_titre: str) -> None:
+    global __canevas
+    __canevas.root.title(nouveau_titre)
+
+def fenetre_icone(fichier_ico: str) -> None:
+    global __canevas
+    __canevas.root.iconbitmap(fichier_ico)
+
 
 @_fenetre_cree
 def ferme_fenetre() -> None:

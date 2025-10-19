@@ -12,6 +12,8 @@ from src.utils.logging import *
 # relative to current file path: ../../assets/blocks.png
 ASSETS_DIR = os.path.join(Path(__file__).parent, "..", "..", "assets")
 
+WINDOW_ICON_PATH = os.path.join(ASSETS_DIR, "logo", "game_icon.ico")
+
 # constants
 BLOCK_SIZE = (64, 64)
 BLOCK_SCALE = 2
@@ -28,15 +30,20 @@ BLOCK_DOUBLE_ADJACENT = 2
 BLOCK_DOUBLE_OPPOSITE = 3
 BLOCK_TRIPLE = 4
 BLOCK_QUAD = 5
-BLOCK_COUNT = 6 # not real index, just count of blocks
+BLOCK_WALL_BACKGROUND = 6
+BLOCK_COUNT = 7 # not real index, just count of blocks
+
+def asset_manager_load_icon():
+    fltk.cree_fenetre()
 
 def asset_manager_init():
     global _blocks
 
     ASSET_FILE_NAMES = ("block_solid.png", "block_single.png", "block_double_adjacent.png",
-                        "block_double_opposite.png", "block_triple.png", "block_quad.png")
+                        "block_double_opposite.png", "block_triple.png", "block_quad.png",
+                        "wall_background.png")
 
-    ASSET_STATE_COUNT = (1, 4, 4, 2, 4, 1)
+    ASSET_STATE_COUNT = (1, 4, 4, 2, 4, 1, 1)
 
     # reserve space so we can use index directly instead of using append()
     _blocks = [[PhotoImage()] * i for i in ASSET_STATE_COUNT]
