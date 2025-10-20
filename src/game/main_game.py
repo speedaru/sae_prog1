@@ -29,11 +29,6 @@ def render_start_menu():
     # set dungeon that was selected (clicked)
     current_dungeon = selected_dungeon
 
-    # show values as tuples
-    for rows in current_dungeon:
-        for room in rows:
-            print(f"{room} -> {dungeon_room_get_connections(room)}")
-
 def render_dungeon(dungeon: DungeonT):
     # don't render if NoneType or no rows
     if isinstance(dungeon, NoneType) or len(dungeon) == 0:

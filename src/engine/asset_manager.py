@@ -36,9 +36,6 @@ BLOCK_COUNT = 7 # not real index, just count of blocks
 
 BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
 
-def asset_manager_load_icon():
-    fltk.cree_fenetre()
-
 def asset_manager_init():
     global _blocks
 
