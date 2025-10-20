@@ -17,8 +17,7 @@ WINDOW_ICON_PATH = os.path.join(ASSETS_DIR, "logo", "game_icon.ico")
 # constants
 BLOCK_SIZE = (64, 64)
 BLOCK_SCALE = 2
-BLOCK_SCALED_SIZE = (int(BLOCK_SIZE[0] * BLOCK_SCALE), int(BLOCK_SIZE[1] * BLOCK_SCALE))
-print(BLOCK_SCALED_SIZE)
+BLOCK_SCALED_SIZE = (BLOCK_SIZE[0] * BLOCK_SCALE, BLOCK_SIZE[1] * BLOCK_SCALE)
 
 
 BlockT = list[PhotoImage]
