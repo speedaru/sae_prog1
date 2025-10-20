@@ -29,10 +29,33 @@ def render_start_menu():
     # set dungeon that was selected (clicked)
     current_dungeon = selected_dungeon
 
+    # show values as tuples
+    for rows in current_dungeon:
+        for room in rows:
+            print(f"{room} -> {dungeon_room_get_connections(room)}")
+
 def render_dungeon(dungeon: DungeonT):
-    # only render if not NoneType and at least 1 row
-    if not isinstance(dungeon, NoneType) and len(dungeon) > 0:
-        dungeon_render(dungeon)
+    # don't render if NoneType or no rows
+    if isinstance(dungeon, NoneType) or len(dungeon) == 0:
+        return
+    
+    dungeon_render(dungeon)
+
+    # rotate rooms
+    click_postion = fltk.click_gauche()
+    if click_postion == (-1, -1):
+        return
+
+    # rotate room at click positons
+    clicked_room_col = click_postion[0] // BLOCK_SCALED_SIZE[0]
+    clicked_room_row = click_postion[1] // BLOCK_SCALED_SIZE[1]
+
+    # if cursor outside of dungeon do nothing
+    if clicked_room_col >= dungeon_get_width(dungeon) or clicked_room_row >= dungeon_get_height(dungeon):
+        return False
+    
+    dungeon_rotate_room(dungeon, clicked_room_row, clicked_room_col)
+
 
 def render():
     global current_dungeon
