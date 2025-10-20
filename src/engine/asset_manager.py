@@ -17,7 +17,8 @@ WINDOW_ICON_PATH = os.path.join(ASSETS_DIR, "logo", "game_icon.ico")
 # constants
 BLOCK_SIZE = (64, 64)
 BLOCK_SCALE = 2
-BLOCK_SCALED_SIZE = (BLOCK_SIZE[0] * BLOCK_SCALE, BLOCK_SIZE[1] * BLOCK_SCALE)
+BLOCK_SCALED_SIZE = (int(BLOCK_SIZE[0] * BLOCK_SCALE), int(BLOCK_SIZE[1] * BLOCK_SCALE))
+print(BLOCK_SCALED_SIZE)
 
 
 BlockT = list[PhotoImage]
@@ -33,6 +34,8 @@ BLOCK_QUAD = 5
 BLOCK_WALL_BACKGROUND = 6
 BLOCK_COUNT = 7 # not real index, just count of blocks
 
+BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
+
 def asset_manager_load_icon():
     fltk.cree_fenetre()
 
@@ -43,19 +46,18 @@ def asset_manager_init():
                         "block_double_opposite.png", "block_triple.png", "block_quad.png",
                         "wall_background.png")
 
-    ASSET_STATE_COUNT = (1, 4, 4, 2, 4, 1, 1)
-
     # reserve space so we can use index directly instead of using append()
-    _blocks = [[PhotoImage()] * i for i in ASSET_STATE_COUNT]
+    _blocks = [[PhotoImage()] * states_count for states_count in BLOCK_MAX_ROTATIONS]
 
-    for i, asset_file_name in enumerate(ASSET_FILE_NAMES):
+    for block_id, asset_file_name in enumerate(ASSET_FILE_NAMES):
         # for each block loop over each different state
-        for j in range(ASSET_STATE_COUNT[i]):
+        for states_count in range(BLOCK_MAX_ROTATIONS[block_id]):
             # different states are just stored in _x.png files
             asset_path = os.path.join(ASSETS_DIR, asset_file_name)
-            asset_path = asset_path.replace(".png", f"_{j + 1}.png")
+            asset_path = asset_path.replace(".png", f"_{states_count + 1}.png")
 
-            _blocks[i][j] = fltk._load_tk_image(asset_path, BLOCK_SCALED_SIZE[0], BLOCK_SCALED_SIZE[1])
+            _blocks[block_id][states_count] = \
+                    fltk._load_tk_image(asset_path, BLOCK_SCALED_SIZE[0], BLOCK_SCALED_SIZE[1])
 
 def asset_manager_initialized() -> bool:
     return len(_blocks) == BLOCK_COUNT

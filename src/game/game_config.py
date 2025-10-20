@@ -1,4 +1,4 @@
 
 
-WINDOW_SIZE = [800, 800]
+WINDOW_SIZE = [768, 768]
 EXIT_KEY = "Escape"
