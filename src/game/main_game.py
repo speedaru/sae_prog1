@@ -1,17 +1,17 @@
-import time
-
 from src.config import *
 import libs.fltk as fltk
+from libs.fltk import FltkEvent
 from src.utils.logging import log_release, log_debug, log_debug_full
 
 from src.engine.asset_manager import *
 import src.engine.engine_config as engine_config
-import src.engine.fps_manager as fps_manager
+# import src.engine.fps_manager as fps_manager
 from src.engine.structs.dungeon import *
 
 import src.game.game_config as game_config
 import src.game.gui as gui
 import src.game.start_menu as start_menu
+import src.game.event_handler as event_handler
 
 
 current_dungeon: DungeonT | NoneType = None
@@ -66,11 +66,6 @@ def render():
 
 
 def main_loop():
-    last_frame_start: float = 0
-
-    fps_interval_s: float = fps_manager.get_target_fps_interval_ms(engine_config.TARGET_FPS) / 1000
-    log_debug_full(f"target fps interval ms: {fps_interval_s}")
-
     # dungeon: DungeonT = DungeonT()
     #
     # # dungeon_file_name = "dungeon_easy.txt"
@@ -81,19 +76,19 @@ def main_loop():
     # dungeon_print_values(dungeon)
 
     window_title = "Wall Is You"
-    window_icon_file = os.path.join(ASSETS_DIR, "game_icon.ico")
+    window_icon_file: str = os.path.join(ASSETS_DIR, "game_icon.ico")
     gui.create_window(window_title, window_icon_file)
 
+    input_event: FltkEvent | NoneType = None
     while True:
-        last_frame_start = fps_manager.get_ctime_ms()
-
-        # exit game
-        if fltk.touche_pressee(game_config.EXIT_KEY):
-            break
-
         gui.start_render()
         render()
         gui.render()
 
-        time.sleep(fps_interval_s)
-        log_debug(f"fps: {fps_manager.get_fps_count(last_frame_start)}")
+        input_event = fltk.attend_ev()
+
+        # exit game
+        if fltk.touche_pressee(game_config.EXIT_KEY):
+            return
+
+        event_handler.handle_input(input_event)

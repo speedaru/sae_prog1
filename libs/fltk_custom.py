@@ -48,6 +48,7 @@ __all__ = [
     "redimensionne_fenetre",
     "mise_a_jour",
     # dessin
+    "arc",
     "ligne",
     "fleche",
     "polygone",
@@ -246,6 +247,14 @@ def cree_fenetre(
             'La fenêtre a déjà été crée avec la fonction "cree_fenetre".'
         )
     __canevas = CustomCanvas(largeur, hauteur, frequence, resizing=redimension)
+
+def fenetre_titre(nouveau_titre: str) -> None:
+    global __canevas
+    __canevas.root.title(nouveau_titre)
+
+def fenetre_icone(fichier_ico: str) -> None:
+    global __canevas
+    __canevas.root.iconbitmap(fichier_ico)
 
 
 @_fenetre_cree
@@ -552,6 +561,34 @@ def image(
     )
     return img_object
 
+@_fenetre_cree
+def image_memoire(
+        x: float,
+        y: float,
+        tk_image: PhotoImage,
+        ancrage: Anchor = "center",
+        tag: str = "",
+) -> int:
+    """
+    Affiche l'image ``tk_image`` avec ``(x, y)`` comme centre. Les
+    valeurs possibles du point d'ancrage sont ``'center'``, ``'nw'``,
+    etc. Les arguments optionnels ``largeur`` et ``hauteur`` permettent de
+    spécifier des dimensions maximales pour l'image (sans changement de
+    proportions).
+
+    :param float x: abscisse du point d'ancrage
+    :param float y: ordonnée du point d'ancrage
+    :param PhotoImage tk_image: image que l'on souhait dessiner
+    :param ancrage: position du point d'ancrage par rapport à l'image
+    :param str tag: étiquette d'objet (défaut : pas d'étiquette)
+    :return: identificateur d'objet
+    """
+    assert __canevas is not None
+    img_object = __canevas.canvas.create_image(
+        x, y, anchor=ancrage, image=tk_image, tags=tag
+    )
+    return img_object
+
 
 def _load_tk_image(fichier: str,
                    hauteur: Optional[int] = None,
@@ -756,6 +793,15 @@ def attend_clic_gauche() -> Tuple[int, int]:
             return x, y
         mise_a_jour()
 
+# si click gauche est presse alors renvoie les coordonee de la souris, sinon renvoie [-1, -1]
+def click_gauche() -> Tuple[int, int]:
+    ev = donne_ev()
+    if ev is not None and type_ev(ev) == "ClicGauche":
+        x, y = abscisse(ev), ordonnee(ev)
+        assert isinstance(x, int) and isinstance(y, int)
+        return x, y
+    else:
+        return (-1, -1)
 
 def attend_fermeture() -> None:
     """Attend la fermeture de la fenêtre. Cette fonction renvoie None.
