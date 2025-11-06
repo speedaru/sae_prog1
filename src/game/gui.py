@@ -1,3 +1,5 @@
+import os
+
 import libs.fltk as fltk
 import src.utils.fltk_extensions as fltk_ext
 
@@ -11,7 +13,10 @@ def create_window(window_title: str, icon_file: str):
 
     fltk.cree_fenetre(width, height, engine_config.TARGET_FPS)
     fltk_ext.fenetre_titre(window_title)
-    fltk_ext.fenetre_icone(icon_file)
+
+    # icon files work only on windows
+    if os.name == "NT":
+        fltk_ext.fenetre_icone(icon_file)
 
 def end_window():
     fltk.ferme_fenetre()
