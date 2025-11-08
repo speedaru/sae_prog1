@@ -8,9 +8,10 @@ from src.engine.structs.dungeon import *
 
 # returns None (if not clicked), returns dungeon if clicked
 def render() -> DungeonT | NoneType:
-    mouse_click_coords = fltk.click_gauche()
+    # mouse_click_coords = fltk.click_gauche()
+    fltk.attend_clic_gauche
 
-    if mouse_click_coords != (-1, -1):
+    if fltk.type_ev(fltk.attend_ev()) == "ClicGauche":
         dungeon: DungeonT = DungeonT()
         # dungeon_file_path = os.path.join(DUNGEON_FILES_DIR, "dungeon_easy.txt")
         dungeon_file_path = os.path.join(DUNGEON_FILES_DIR, "dungeon_hard.txt")
