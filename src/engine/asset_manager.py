@@ -19,9 +19,7 @@ BLOCK_SIZE = (64, 64)
 BLOCK_SCALE = 2
 BLOCK_SCALED_SIZE = (BLOCK_SIZE[0] * BLOCK_SCALE, BLOCK_SIZE[1] * BLOCK_SCALE)
 
-
 BlockT = list[PhotoImage]
-_blocks: list[BlockT] | list[NoneType] = list()
 
 # enum for blocks since we're not allowed to use real enums
 BLOCK_SOLID = 0
@@ -35,15 +33,13 @@ BLOCK_COUNT = 7 # not real index, just count of blocks
 
 BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
 
-def asset_manager_init():
-    global _blocks
-
+def asset_manager_init(blocks: list[BlockT] | list[NoneType]):
     ASSET_FILE_NAMES = ("block_solid.png", "block_single.png", "block_double_adjacent.png",
                         "block_double_opposite.png", "block_triple.png", "block_quad.png",
                         "wall_background.png")
 
     # reserve space so we can use index directly instead of using append()
-    _blocks = [[PhotoImage()] * states_count for states_count in BLOCK_MAX_ROTATIONS]
+    blocks = [[PhotoImage()] * states_count for states_count in BLOCK_MAX_ROTATIONS]
 
     for block_id, asset_file_name in enumerate(ASSET_FILE_NAMES):
         # for each block loop over each different state
@@ -52,23 +48,23 @@ def asset_manager_init():
             asset_path = os.path.join(ASSETS_DIR, asset_file_name)
             asset_path = asset_path.replace(".png", f"_{states_count + 1}.png")
 
-            _blocks[block_id][states_count] = \
+            blocks[block_id][states_count] = \
                     fltk._load_tk_image(asset_path, BLOCK_SCALED_SIZE[0], BLOCK_SCALED_SIZE[1])
 
-def asset_manager_initialized() -> bool:
-    return len(_blocks) == BLOCK_COUNT
+def asset_manager_initialized(blocks: list[BlockT] | list[NoneType]) -> bool:
+    return len(blocks) == BLOCK_COUNT
 
 # for block use a variable like BLOCK_
-def asset_manager_get_block(block_idx: int, rotation_count: int) -> PhotoImage | NoneType:
-    if not asset_manager_initialized():
+def asset_manager_get_block(blocks: list[BlockT] | list[NoneType], block_idx: int, rotation_count: int) -> PhotoImage | NoneType:
+    if not asset_manager_initialized(blocks):
         return None
 
     log_debug_full(f"[asset_manger] getting block: {block_idx}")
-    if block_idx >= len(_blocks): # out of bounds check
+    if block_idx >= len(blocks): # out of bounds check
         log_debug(f"[asset_manager] failed to get block: {block_idx} (out of bounds, block count: {len(_blocks)})")
         return None
 
-    block: BlockT | NoneType = _blocks[block_idx] 
+    block: BlockT | NoneType = blocks[block_idx] 
 
     # check invalid
     if isinstance(block, NoneType):
