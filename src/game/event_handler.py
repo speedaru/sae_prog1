@@ -8,7 +8,7 @@ from src.engine.structs.dungeon import *
 import src.game.game_config as game_config
 
 
-def handle_input(input_event: FltkEvent | NoneType, dungeon: DungeonT):
+def handle_input(input_event: FltkEvent | NoneType, dungeon: DungeonT | NoneType):
     if input_event == None:
         return
 
