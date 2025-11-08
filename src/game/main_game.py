@@ -1,3 +1,4 @@
+from game.state_manager import STATE_GAME_DUNGEON, STATE_MENU_START, get_game_state
 from src.config import *
 import libs.fltk as fltk
 from libs.fltk import FltkEvent
@@ -14,11 +15,11 @@ import src.game.start_menu as start_menu
 import src.game.event_handler as event_handler
 
 
-current_dungeon: DungeonT | NoneType = None
+g_current_dungeon: DungeonT | NoneType = None
 
 
 def render_start_menu():
-    global current_dungeon
+    global g_current_dungeon
 
     selected_dungeon: DungeonT | NoneType = start_menu.render()
 
@@ -27,11 +28,11 @@ def render_start_menu():
         return
 
     # set dungeon that was selected (clicked)
-    current_dungeon = selected_dungeon
+    g_current_dungeon = selected_dungeon
 
-def render_dungeon(dungeon: DungeonT):
+def render_dungeon(dungeon: DungeonT | NoneType):
     # don't render if NoneType or no rows
-    if isinstance(dungeon, NoneType) or len(dungeon) == 0:
+    if isinstance(dungeon, NoneType) or dungeon_get_height(dungeon):
         return
     
     dungeon_render(dungeon)
@@ -53,19 +54,22 @@ def render_dungeon(dungeon: DungeonT):
 
 
 def render():
-    global current_dungeon
+    global g_current_dungeon
 
     if not asset_manager_initialized():
         asset_manager_init()
 
-    # if no dungeon selected then render the start_menu, otherwise render the dungeon
-    if isinstance(current_dungeon, NoneType):
+    # render based on game state
+    current_game_state = get_game_state()
+    if current_game_state == STATE_MENU_START:
         render_start_menu()
-    else:
-        render_dungeon(current_dungeon)
+    elif current_game_state == STATE_GAME_DUNGEON:
+        render_dungeon(g_current_dungeon)
 
 
 def main_loop():
+    global g_current_dungeon
+
     # dungeon: DungeonT = DungeonT()
     #
     # # dungeon_file_name = "dungeon_easy.txt"
@@ -85,10 +89,10 @@ def main_loop():
         render()
         gui.render()
 
-        input_event = fltk.attend_ev()
+        input_event = fltk.donne_ev()
 
         # exit game
         if fltk.touche_pressee(game_config.EXIT_KEY):
             return
 
-        event_handler.handle_input(input_event)
+        event_handler.handle_input(input_event, g_current_dungeon)
