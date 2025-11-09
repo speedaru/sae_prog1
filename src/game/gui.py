@@ -6,6 +6,8 @@ import src.utils.fltk_extensions as fltk_ext
 import src.engine.engine_config as engine_config
 import src.game.game_config as game_config
 
+from src.utils.logging import *
+
 
 def create_window(window_title: str, icon_file: str):
     width = game_config.WINDOW_SIZE[0]
@@ -14,8 +16,10 @@ def create_window(window_title: str, icon_file: str):
     fltk.cree_fenetre(width, height, engine_config.TARGET_FPS)
     fltk_ext.fenetre_titre(window_title)
 
+    log_debug(f"os name: {os.name}")
+
     # icon files work only on windows
-    if os.name == "NT":
+    if os.name.lower() == "nt":
         fltk_ext.fenetre_icone(icon_file)
 
 def end_window():
