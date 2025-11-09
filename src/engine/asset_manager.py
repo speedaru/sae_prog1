@@ -19,6 +19,7 @@ BLOCK_SIZE = (64, 64)
 BLOCK_SCALE = 2
 BLOCK_SCALED_SIZE = (BLOCK_SIZE[0] * BLOCK_SCALE, BLOCK_SIZE[1] * BLOCK_SCALE)
 
+# types
 BlockT = list[PhotoImage]
 BlockListT = list[BlockT]
 
@@ -32,6 +33,7 @@ BLOCK_QUAD = 5
 BLOCK_WALL_BACKGROUND = 6
 BLOCK_COUNT = 7 # not real index, just count of blocks
 
+# max rotations for each block image in order
 BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
 
 def asset_manager_init() -> BlockListT:

@@ -1,5 +1,5 @@
 import libs.fltk as fltk
-from libs.fltk import PhotoImage, Anchor
+from libs.fltk import FltkEvent, PhotoImage, Anchor
 
 
 def fenetre_titre(nouveau_titre: str) -> None:
@@ -47,3 +47,8 @@ def image_memoire(
         x, y, anchor=ancrage, image=tk_image, tags=tag
     )
     return img_object
+
+def position_souris(ev: FltkEvent) -> tuple[int, int]:
+    x, y = fltk.abscisse(ev), fltk.ordonnee(ev)
+    assert isinstance(x, int) and isinstance(y, int)
+    return (x, y)
