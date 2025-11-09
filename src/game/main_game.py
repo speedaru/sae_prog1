@@ -18,17 +18,15 @@ from src.game.state_manager import *
 from src.game.game_config import *
 
 
-def render_start_menu(game_context: GameContextT):
-    selected_dungeon: DungeonT | NoneType = start_menu.render()
+def render_start_menu(game_context: GameContextT) -> GameEventDataT | NoneType:
+    selected_dungeon: DungeonT | NoneType = start_menu.render(game_context)
 
-    # if no dungeon selected
-    if isinstance(selected_dungeon, NoneType):
-        return
+    return selected_dungeon
 
-    # set dungeon that was selected (clicked)
-    print("seted dungeon")
-    game_context[GAME_CONTEXT_DUNGEON] = selected_dungeon
-    game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_DUNGEON
+    # # set dungeon that was selected (clicked)
+    # print("seted dungeon")
+    # game_context[GAME_CONTEXT_DUNGEON] = selected_dungeon
+    # game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_DUNGEON
 
 def render_dungeon(game_context: GameContextT):
     blocks: BlockListT = game_context[GAME_CONTEXT_BLOCKS]
@@ -38,8 +36,10 @@ def render_dungeon(game_context: GameContextT):
     if isinstance(dungeon, NoneType) or dungeon_get_height(dungeon) == 0:
         return
     
-    print("rendering dungeon: {dungeon_get_width(dungeon)}x{dungeon_get_height(dungeon)}")
-    dungeon_render(blocks, dungeon)
+    log_debug_full("rendering dungeon: {dungeon_get_width(dungeon)}x{dungeon_get_height(dungeon)}")
+    dungeon_render(dungeon, blocks)
+
+    return None
 
     # # rotate rooms
     # click_postion = fltk.click_gauche()
@@ -57,15 +57,18 @@ def render_dungeon(game_context: GameContextT):
     # dungeon_rotate_room(dungeon, clicked_room_row, clicked_room_col)
 
 
-def render(game_context: GameContextT):
+def render(game_context: GameContextT) -> GameEventDataT:
     game_state = game_context[GAME_CONTEXT_GAME_STATE]
-    print(f"[render] gamestate: {game_state}")
+
+    event_data: GameEventDataT = None
 
     # if no dungeon selected then render the start_menu, otherwise render the dungeon
     if game_state == STATE_MENU_START:
-        render_start_menu(game_context)
+        event_data = render_start_menu(game_context)
     elif game_state == STATE_GAME_DUNGEON:
         render_dungeon(game_context)
+
+    return event_data
 
 
 def main_loop():
@@ -74,7 +77,6 @@ def main_loop():
     current_dungeon: DungeonT = DungeonT()
     game_state = STATE_MENU_START
     game_context: GameContextT = [None] * GAME_CONTEXT_COUNT
-    print(f"game context size: {len(game_context)}")
 
     # init stuff
     window_title = "Wall Is You"
@@ -84,21 +86,34 @@ def main_loop():
     if not asset_manager_initialized(blocks):
         blocks = asset_manager_init()
 
+    # init game event
+    game_event: GameEventT | NoneType = [None] * GAME_EVENT_COUNT
+
     # init game context
     game_context[GAME_CONTEXT_BLOCKS] = blocks
     game_context[GAME_CONTEXT_GAME_STATE] = game_state
+    game_context[GAME_CONTEXT_EVENT] = game_event
     game_context[GAME_CONTEXT_DUNGEON] = current_dungeon
 
-    input_event: FltkEvent | NoneType = None
     while True:
+        # get event
+        event_type: FltkEvent | NoneType = fltk.donne_ev()
+        game_event[GAME_EVENT_TYPE] = event_type
+
+        # render
         gui.start_render()
-        render(game_context)
+
+        # pass event to render function so it can send back event_data
+        event_data: GameEventDataT = render(game_context)
+
         gui.render()
 
-        input_event = fltk.donne_ev()
-
-        # exit game
+        # exit game if exit key pressed
         if fltk.touche_pressee(EXIT_KEY):
             return
 
-        event_handler.handle_input(input_event, game_context)
+        # handle event only if there is event to handle
+        if not isinstance(event_type, NoneType):
+            game_event[GAME_EVENT_DATA] = event_data
+
+            event_handler.handle_event(game_event, game_context)

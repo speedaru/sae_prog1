@@ -114,7 +114,7 @@ def dungeon_ascii_to_room(ascii_room: str) -> RoomT:
     return ROOM
 
 # returns True if successfuly parsed file
-def dungeon_parse_file(dungeon_file_path: str, dungeon: DungeonT) -> bool:
+def dungeon_parse_file(dungeon: DungeonT, dungeon_file_path: str) -> bool:
     # read file
     file_data: str = read_utf8_file(dungeon_file_path)
     if file_data == "":
@@ -159,7 +159,7 @@ def dungeon_print_values(dungeon: DungeonT):
 
 # ---------- RENDERING ----------
 
-def dungeon_room_render(blocks: list[BlockT], x: float, y: float, room: RoomT):
+def dungeon_room_render(room: RoomT, blocks: list[BlockT], x: float, y: float):
     # draw wall background for block
     wall_background_image = asset_manager_get_block(blocks, BLOCK_WALL_BACKGROUND, 0)
     fltk_ext.image_memoire(x, y, wall_background_image, ancrage="nw")
@@ -168,7 +168,7 @@ def dungeon_room_render(blocks: list[BlockT], x: float, y: float, room: RoomT):
     block_image = asset_manager_get_block(blocks, room[ROOM_BLOCK_ID], room[ROOM_ROTATION_COUNT])
     fltk_ext.image_memoire(x, y, block_image, ancrage="nw")
 
-def dungeon_render(blocks: list[BlockT], dungeon: DungeonT):
+def dungeon_render(dungeon: DungeonT, blocks: list[BlockT]):
     for i, row in enumerate(dungeon): # draw rows
         for j, room in enumerate(row): # draw each individual room
             # get room coordinates
@@ -176,4 +176,4 @@ def dungeon_render(blocks: list[BlockT], dungeon: DungeonT):
             y = i * BLOCK_SCALED_SIZE[1]
 
             # draw room
-            dungeon_room_render(blocks, x, y, room)
+            dungeon_room_render(room, blocks, x, y)
