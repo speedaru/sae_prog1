@@ -5,10 +5,23 @@ from libs.fltk import FltkEvent
 
 from src.engine.structs.dungeon import *
 
-import src.game.game_config as game_config
+from src.game.game_config import *
+from src.game.state_manager import *
 
 
-def handle_input(input_event: FltkEvent | NoneType, dungeon: DungeonT | NoneType):
-    if input_event == None:
+def handle_start_menu_event(input_event: FltkEvent | NoneType, game_context: GameContextT):
+    print("start menu event !")
+
+def handle_normal_game_event(input_event: FltkEvent | NoneType, game_context: GameContextT):
+    print("game event !")
+
+def handle_input(input_event: FltkEvent | NoneType, game_context: GameContextT):
+    if isinstance(input_event, NoneType):
         return
 
+    game_state = game_context[GAME_CONTEXT_GAME_STATE]
+    print(f"game state: {game_state}")
+    if game_state == STATE_MENU_START:
+        handle_start_menu_event(input_event, game_context)
+    elif game_state == STATE_GAME_DUNGEON:
+        handle_normal_game_event(input_event, game_context)
