@@ -20,6 +20,7 @@ BLOCK_SCALE = 2
 BLOCK_SCALED_SIZE = (BLOCK_SIZE[0] * BLOCK_SCALE, BLOCK_SIZE[1] * BLOCK_SCALE)
 
 BlockT = list[PhotoImage]
+BlockListT = list[BlockT]
 
 # enum for blocks since we're not allowed to use real enums
 BLOCK_SOLID = 0
@@ -33,7 +34,7 @@ BLOCK_COUNT = 7 # not real index, just count of blocks
 
 BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
 
-def asset_manager_init(blocks: list[BlockT] | list[NoneType]):
+def asset_manager_init() -> BlockListT:
     ASSET_FILE_NAMES = ("block_solid.png", "block_single.png", "block_double_adjacent.png",
                         "block_double_opposite.png", "block_triple.png", "block_quad.png",
                         "wall_background.png")
@@ -50,6 +51,8 @@ def asset_manager_init(blocks: list[BlockT] | list[NoneType]):
 
             blocks[block_id][states_count] = \
                     fltk._load_tk_image(asset_path, BLOCK_SCALED_SIZE[0], BLOCK_SCALED_SIZE[1])
+
+    return blocks
 
 def asset_manager_initialized(blocks: list[BlockT] | list[NoneType]) -> bool:
     return len(blocks) == BLOCK_COUNT

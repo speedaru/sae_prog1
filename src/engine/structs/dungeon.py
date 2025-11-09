@@ -1,5 +1,8 @@
-from tkinter import TRUE
+import libs.fltk as fltk
+
 from src.utils.file_utils import read_utf8_file
+import src.utils.fltk_extensions as fltk_ext
+
 from src.engine.asset_manager import *
 
 
@@ -156,14 +159,16 @@ def dungeon_print_values(dungeon: DungeonT):
 
 # ---------- RENDERING ----------
 
-def dungeon_room_render(x: float, y: float, room: RoomT):
+def dungeon_room_render(blocks: list[BlockT], x: float, y: float, room: RoomT):
     # draw wall background for block
-    fltk.image_memoire(x, y, asset_manager_get_block(BLOCK_WALL_BACKGROUND, 0), ancrage="nw")
+    wall_background_image = asset_manager_get_block(blocks, BLOCK_WALL_BACKGROUND, 0)
+    fltk_ext.image_memoire(x, y, wall_background_image, ancrage="nw")
 
     # draw room block on top of wall background
-    fltk.image_memoire(x, y, asset_manager_get_block(room[ROOM_BLOCK_ID], room[ROOM_ROTATION_COUNT]), ancrage="nw")
+    block_image = asset_manager_get_block(blocks, room[ROOM_BLOCK_ID], room[ROOM_ROTATION_COUNT])
+    fltk_ext.image_memoire(x, y, block_image, ancrage="nw")
 
-def dungeon_render(dungeon: DungeonT):
+def dungeon_render(blocks: list[BlockT], dungeon: DungeonT):
     for i, row in enumerate(dungeon): # draw rows
         for j, room in enumerate(row): # draw each individual room
             # get room coordinates
@@ -171,4 +176,4 @@ def dungeon_render(dungeon: DungeonT):
             y = i * BLOCK_SCALED_SIZE[1]
 
             # draw room
-            dungeon_room_render(x, y, room)
+            dungeon_room_render(blocks, x, y, room)
