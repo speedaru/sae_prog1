@@ -159,16 +159,20 @@ def dungeon_print_values(dungeon: DungeonT):
 
 # ---------- RENDERING ----------
 
-def dungeon_room_render(room: RoomT, blocks: list[BlockT], x: float, y: float):
+def dungeon_room_render(room: RoomT, assets: AssetsT, x: float, y: float):
     # draw wall background for block
-    wall_background_image = asset_manager_get_block(blocks, BLOCK_WALL_BACKGROUND, 0)
+    wall_background_image = asset_manager_get_block(assets, BLOCK_WALL_BACKGROUND, 0)
     fltk_ext.image_memoire(x, y, wall_background_image, ancrage="nw")
 
     # draw room block on top of wall background
-    block_image = asset_manager_get_block(blocks, room[ROOM_BLOCK_ID], room[ROOM_ROTATION_COUNT])
+    block_image = asset_manager_get_block(assets, room[ROOM_BLOCK_ID], room[ROOM_ROTATION_COUNT])
     fltk_ext.image_memoire(x, y, block_image, ancrage="nw")
 
-def dungeon_render(dungeon: DungeonT, blocks: list[BlockT]):
+def dungeon_render(dungeon: DungeonT, assets: AssetsT):
+    # don't render dungeon if NoneType or no rows
+    if isinstance(dungeon, NoneType) or dungeon_get_height(dungeon) == 0:
+        return
+
     for i, row in enumerate(dungeon): # draw rows
         for j, room in enumerate(row): # draw each individual room
             # get room coordinates
@@ -176,4 +180,4 @@ def dungeon_render(dungeon: DungeonT, blocks: list[BlockT]):
             y = i * BLOCK_SCALED_SIZE[1]
 
             # draw room
-            dungeon_room_render(room, blocks, x, y)
+            dungeon_room_render(room, assets, x, y)

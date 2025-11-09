@@ -10,6 +10,8 @@ import src.engine.engine_config as engine_config
 from src.engine.asset_manager import *
 # import src.engine.fps_manager as fps_manager
 from src.engine.structs.dungeon import *
+from src.engine.structs.adventurer import *
+from src.engine.structs.dragon import *
 
 import src.game.gui as gui
 import src.game.start_menu as start_menu
@@ -28,16 +30,34 @@ def render_start_menu(game_context: GameContextT) -> GameEventDataT | NoneType:
     # game_context[GAME_CONTEXT_DUNGEON] = selected_dungeon
     # game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_DUNGEON
 
-def render_dungeon(game_context: GameContextT):
-    blocks: BlockListT = game_context[GAME_CONTEXT_BLOCKS]
-    dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
+def render_game(game_context: GameContextT):
+    assets: AssetsT = game_context[GAME_CONTEXT_ASSETS]
 
-    # don't render if NoneType or no rows
-    if isinstance(dungeon, NoneType) or dungeon_get_height(dungeon) == 0:
-        return
-    
-    log_debug_full("rendering dungeon: {dungeon_get_width(dungeon)}x{dungeon_get_height(dungeon)}")
-    dungeon_render(dungeon, blocks)
+    dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
+    adventurer: AdventurerT = game_context[GAME_CONTEXT_ADVENTURER]
+    dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS]
+
+    # render dungeon
+    if dungeon != None:
+        log_debug_full("rendering dungeon: {dungeon_get_width(dungeon)}x{dungeon_get_height(dungeon)}")
+        dungeon_render(dungeon, assets)
+    else:
+        log_debug("cant render dungeon because dungeon is None")
+
+    # render adventurer
+    if adventurer != None:
+        log_debug_full(f"rendering adventurer: level: room_pos: {adventurer[ADVENTURER_ROOM_POS]} {adventurer[ADVENTURER_LEVEL]}")
+        adventurer_render(adventurer, assets)
+    else:
+        log_debug("cant render adventurer because adventurer is None")
+
+    # render dragons
+    if dragons != None:
+        log_debug_full(f"rendering dragons: {dragons}")
+        for dragon in dragons:
+            dragon_render(dragon, assets)
+    else:
+        log_debug("cant render dragons because dragons is None")
 
     return None
 
@@ -66,15 +86,17 @@ def render(game_context: GameContextT) -> GameEventDataT:
     if game_state == STATE_MENU_START:
         event_data = render_start_menu(game_context)
     elif game_state == STATE_GAME_DUNGEON:
-        render_dungeon(game_context)
+        render_game(game_context)
 
     return event_data
 
 
 def main_loop():
     # globals
-    blocks: list[BlockT] | list[NoneType] = list()
+    assets: AssetsT = list()
     current_dungeon: DungeonT = DungeonT()
+    adventurer: AdventurerT = AdventurerT()
+    dragons: list[DragonT] = list[DragonT]()
     game_state = STATE_MENU_START
     game_context: GameContextT = [None] * GAME_CONTEXT_COUNT
 
@@ -83,17 +105,27 @@ def main_loop():
     window_icon_file: str = os.path.join(ASSETS_DIR, "game_icon.ico")
     gui.create_window(window_title, window_icon_file)
 
-    if not asset_manager_initialized(blocks):
-        blocks = asset_manager_init()
+    if not asset_manager_initialized(assets):
+        assets = asset_manager_init()
+
+    # create adventurer
+    adventurer_init(adventurer)
+    
+    # create dragons
+    for _ in range(DUNGEON_DRAGONS_COUNT):
+        dragons.append(DragonT())
+        dragon_init(dragons[-1])
 
     # init game event
     game_event: GameEventT | NoneType = [None] * GAME_EVENT_COUNT
 
     # init game context
-    game_context[GAME_CONTEXT_BLOCKS] = blocks
+    game_context[GAME_CONTEXT_ASSETS] = assets
     game_context[GAME_CONTEXT_GAME_STATE] = game_state
     game_context[GAME_CONTEXT_EVENT] = game_event
     game_context[GAME_CONTEXT_DUNGEON] = current_dungeon
+    game_context[GAME_CONTEXT_ADVENTURER] = adventurer
+    game_context[GAME_CONTEXT_DRAGONS] = dragons
 
     while True:
         # get event
