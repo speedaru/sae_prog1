@@ -1,1 +1,0 @@
-enlever modif de fltk.py et les mettre dans un fichier separe

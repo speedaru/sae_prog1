@@ -21,14 +21,10 @@ from src.game.game_config import *
 
 
 def render_start_menu(game_context: GameContextT) -> GameEventDataT | NoneType:
+    # get event data
     selected_dungeon: DungeonT | NoneType = start_menu.render(game_context)
 
     return selected_dungeon
-
-    # # set dungeon that was selected (clicked)
-    # print("seted dungeon")
-    # game_context[GAME_CONTEXT_DUNGEON] = selected_dungeon
-    # game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_DUNGEON
 
 def render_game(game_context: GameContextT):
     assets: AssetsT = game_context[GAME_CONTEXT_ASSETS]
@@ -42,14 +38,14 @@ def render_game(game_context: GameContextT):
         log_debug_full("rendering dungeon: {dungeon_get_width(dungeon)}x{dungeon_get_height(dungeon)}")
         dungeon_render(dungeon, assets)
     else:
-        log_debug("cant render dungeon because dungeon is None")
+        log_error("cant render dungeon because dungeon is None")
 
     # render adventurer
     if adventurer != None:
         log_debug_full(f"rendering adventurer: level: room_pos: {adventurer[ADVENTURER_ROOM_POS]} {adventurer[ADVENTURER_LEVEL]}")
         adventurer_render(adventurer, assets)
     else:
-        log_debug("cant render adventurer because adventurer is None")
+        log_error("cant render adventurer because adventurer is None")
 
     # render dragons
     if dragons != None:
@@ -57,24 +53,7 @@ def render_game(game_context: GameContextT):
         for dragon in dragons:
             dragon_render(dragon, assets)
     else:
-        log_debug("cant render dragons because dragons is None")
-
-    return None
-
-    # # rotate rooms
-    # click_postion = fltk.click_gauche()
-    # if click_postion == (-1, -1):
-    #     return
-    #
-    # # rotate room at click positons
-    # clicked_room_col = click_postion[0] // BLOCK_SCALED_SIZE[0]
-    # clicked_room_row = click_postion[1] // BLOCK_SCALED_SIZE[1]
-    #
-    # # if cursor outside of dungeon do nothing
-    # if clicked_room_col >= dungeon_get_width(dungeon) or clicked_room_row >= dungeon_get_height(dungeon):
-    #     return False
-    # 
-    # dungeon_rotate_room(dungeon, clicked_room_row, clicked_room_col)
+        log_error("cant render dragons because dragons is None")
 
 
 def render(game_context: GameContextT) -> GameEventDataT:
