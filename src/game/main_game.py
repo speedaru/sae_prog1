@@ -64,7 +64,7 @@ def render(game_context: GameContextT) -> GameEventDataT:
     # if no dungeon selected then render the start_menu, otherwise render the dungeon
     if game_state == STATE_MENU_START:
         event_data = render_start_menu(game_context)
-    elif game_state == STATE_GAME_DUNGEON:
+    elif game_state == STATE_GAME_TURN_PLAYER:
         dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS] 
 
         # initialize dragons if none
