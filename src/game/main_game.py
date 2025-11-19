@@ -65,6 +65,16 @@ def render(game_context: GameContextT) -> GameEventDataT:
     if game_state == STATE_MENU_START:
         event_data = render_start_menu(game_context)
     elif game_state == STATE_GAME_DUNGEON:
+        dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS] 
+
+        # initialize dragons if none
+        if len(dragons) == 0:
+            dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
+            assert(len(dungeon) > 0) # make sure dungeon is not empty
+
+            dungeon_size = (len(dungeon), len(dungeon[0]))
+            dragon_create_dragons(dragons, dungeon_size)
+
         render_game(game_context)
 
     return event_data
@@ -90,11 +100,6 @@ def main_loop():
     # create adventurer
     adventurer_init(adventurer)
     
-    # create dragons
-    for _ in range(DUNGEON_DRAGONS_COUNT):
-        dragons.append(DragonT())
-        dragon_init(dragons[-1])
-
     # init game event
     game_event: GameEventT | NoneType = [None] * GAME_EVENT_COUNT
 
