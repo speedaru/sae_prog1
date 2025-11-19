@@ -1,20 +1,19 @@
 # engine stuff
-from src.engine.structs.dungeon import *
 from src.engine.asset_manager import *
 from src.engine.structs.entity import *
 
 # utils
-import src.utils.fltk_extensions as fltk_ext
 from src.utils.logging import *
 
 
 # types
-AdventurerT = list[list[int] | int]
+AdventurerT = list[list[int] | int | list[tuple[int, int]]]
 
 # enum for adventurer structure
 ADVENTURER_ROOM_POS = 0
 ADVENTURER_LEVEL = 1
-ADVENTURER_COUNT = 2
+ADVENTURER_PATH = 2
+ADVENTURER_COUNT = 3
 
 
 def adventurer_init(adventurer: AdventurerT, level: int = 1, room_pos: list[int] = [0, 0]):

@@ -6,10 +6,15 @@ from pathlib import Path
 # external librairies
 import libs.fltk as fltk
 
-# import games project files
-from src.config import DUNGEON_FILES_DIR
+# engine
 from src.engine.structs.dungeon import DungeonT, dungeon_parse_file
+
+# config and game
+from src.config import DUNGEON_FILES_DIR
 from src.game.game_config import *
+from src.game.keys import *
+
+# utils
 from src.utils.logging import *
 from src.utils.geom import * 
 
@@ -38,10 +43,10 @@ def _positions_init(positions: _PositionsT,
     positions[_POSITIONS_SIZE] = size
 
 
-def _get_tl(position: _PositionsT):
+def _get_tl(position: _PositionsT) -> tuple[int, int]:
     return position[_POSITIONS_POS]
 
-def _get_br(position: _PositionsT):
+def _get_br(position: _PositionsT) -> tuple[int, int]:
     x, y = position[_POSITIONS_POS]
     w, h = position[_POSITIONS_SIZE]
     return (x + w, y + h)
@@ -80,22 +85,21 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
     fltk.mise_a_jour()
 
     # gestion du clic gauche
-    ev = game_context[GAME_CONTEXT_EVENT][GAME_EVENT_TYPE]
-    if fltk.type_ev(ev) == "ClicGauche":
+    ev: FltkEvent = game_context[GAME_CONTEXT_EVENT][GAME_EVENT_TYPE]
+    if fltk.type_ev(ev) == KEY_X1:
         click_pos = fltk_ext.position_souris(ev)  # coordonnées de la souris
 
         # vérifier sur quel texte on a cliqué
         for position in positions:
             tl = _get_tl(position)
             br = _get_br(position)
-            log_debug(f"clique{click_pos}")
-            log_debug(f"tl,br{tl,br}")
+            log_debug_full(f"clique{click_pos}")
+            log_debug_full(f"tl,br{tl,br}")
             if in_rectangle(click_pos, tl, br):
-                log_debug("OUI")
+                log_debug_full("OUI")
                 dungeon = DungeonT()
-                dungeon_file_path = os.path.join(DUNGEON_FILES_DIR,
-                                                position[_POSITIONS_DUNGEON])
-                log_debug(f"FICHIERS {dungeon_file_path} ")
+                dungeon_file_path = os.path.join(DUNGEON_FILES_DIR, position[_POSITIONS_DUNGEON])
+                log_debug_full(f"FICHIERS {dungeon_file_path} ")
                 dungeon_parse_file (dungeon,dungeon_file_path)
                 return dungeon
 

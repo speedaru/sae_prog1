@@ -5,18 +5,23 @@ from libs.fltk import FltkEvent
 
 from src.engine.asset_manager import AssetsT, BlockT, BlockListT
 from src.engine.structs.dungeon import DungeonT
+from src.engine.structs.entity import EntityT
+from src.engine.structs.adventurer import AdventurerT
+from src.engine.structs.dragon import DragonT
+
 from src.game.state_manager import GameStateT
+from src.game.keys import *
 
 
 # constants
 WINDOW_SIZE = [768, 768]
-EXIT_KEY = "Escape"
+EXIT_KEY = KEY_ESCAPE
 DUNGEON_DRAGONS_COUNT = 3
 
 # types
 GameEventDataT = Any
 GameEventT = list[FltkEvent | GameEventDataT] # data from game event
-GameContextT = list[AssetsT | GameEventT | DungeonT | GameStateT | NoneType]
+GameContextT = list[AssetsT | GameEventT | DungeonT | GameStateT | NoneType | EntityT | AdventurerT | list[DragonT]]
 
 # enum for game context
 GAME_CONTEXT_ASSETS = 0     # list of block images
