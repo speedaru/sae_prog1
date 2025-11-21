@@ -1,4 +1,5 @@
-
+from src.engine.structs.dungeon import *
+from src.engine.asset_manager import BLOCK_SCALED_SIZE
 
 # pos: pos to check
 # tl, br: top-left, bottom-right
@@ -19,3 +20,16 @@ def in_rectangle(pos: tuple[int, int], tl: tuple[int, int], br: tuple[int, int])
     x2, y2 = br
 
     return x1 <= x <= x2 and y1 <= y <= y2
+
+def get_room_tl_screen_pos(room_pos: RoomPosT) -> tuple[int, int]:
+    """
+    return screen coordinates x, y of rooms top left coordinates
+    """
+    return (room_pos[ROOM_POS_COL] * BLOCK_SCALED_SIZE[0], room_pos[ROOM_POS_ROW] * BLOCK_SCALED_SIZE[1])
+
+def get_room_center_screen_pos(room_pos: RoomPosT) -> tuple[int, int]:
+    """
+    return screen coordinates x, y of rooms center coordinates
+    """
+    tl = get_room_tl_screen_pos(room_pos)
+    return (tl[0] + (BLOCK_SCALED_SIZE[0] // 2), tl[1] + (BLOCK_SCALED_SIZE[1] // 2))

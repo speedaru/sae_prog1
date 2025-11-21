@@ -150,7 +150,7 @@ def asset_manager_get_block(assets: AssetsT, block_idx: int, rotation_count: int
 
     blocks: BlockListT = assets[ASSETS_BLOCKS]
 
-    log_debug_full(f"[asset_manger] getting block: {block_idx}")
+    log_trace(f"[asset_manger] getting block: {block_idx}")
     if block_idx >= len(blocks): # out of bounds check
         log_debug(f"[asset_manager] failed to get block: {block_idx} (out of bounds, block count: {len(blocks)})")
         return None

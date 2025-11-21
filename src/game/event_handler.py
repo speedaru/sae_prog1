@@ -1,9 +1,13 @@
 from types import NoneType
 
 import libs.fltk as fltk
-from libs.fltk import FltkEvent
+from libs.fltk import FltkEvent, TkEvent
 
+import src.engine.game_logic as game_logic
 from src.engine.structs.dungeon import *
+from src.engine.structs.adventurer import *
+from src.engine.structs.dragon import *
+from src.engine.event_info import *
 
 from src.game.game_config import *
 from src.game.state_manager import *
@@ -13,6 +17,21 @@ import src.utils.fltk_extensions as fltk_ext
 from src.utils.logging import *
 
 
+# -------------------- FUNCTIONS --------------------
+def handle_room_rotation(ev: FltkEvent, dungeon: DungeonT):
+    # rotate rooms
+    click_postion: tuple[int, int] = fltk_ext.position_souris(ev)
+
+    clicked_room = dungeon_get_room_from_pos(dungeon, click_postion)
+    if clicked_room == None:
+        log_debug("room selected is OOB")
+        return
+
+    # rotate room at click positons
+    dungeon_rotate_room(dungeon, clicked_room[0], clicked_room[1])
+
+
+# -------------------- GENERAL EVENT HANDLERS --------------------
 def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
     """
     Handles events occurring while in the Start Menu state.
@@ -25,23 +44,24 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
         game_event (GameEventT): The event structure containing type and data.
         game_context (GameContextT): The global game context to update.
     """
-    ev = game_event[GAME_EVENT_TYPE]
+    event_info = event_get_info(game_event)
+    if event_info[EVENT_INFO_TYPE] == None:
+        return None
 
-    
-    if fltk.type_ev(ev) == KEY_X1:
-        selected_dungeon: DungeonT | NoneType = game_event[GAME_EVENT_DATA]
-
+    if event_info[EVENT_INFO_TYPE] == KEY_X1:
         # if no dungeon selected ignore event
-        if selected_dungeon == None:
+        if game_event[GAME_EVENT_DATA] == None:
             return
 
-        game_context[GAME_CONTEXT_DUNGEON] = selected_dungeon
-        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_PLAYER
-        log_event_trace(f"seted dungeon: {game_context[GAME_CONTEXT_DUNGEON]}")
+        selected_dungeon: DungeonT = game_event[GAME_EVENT_DATA]
 
-def handle_normal_game_event(game_event: GameEventT, game_context: GameContextT):
+        game_logic.init_game_context(game_context, selected_dungeon)
+        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+
+
+def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT):
     """
-    Handles events occurring during the Player's Turn.
+    Handles events occurring during the Dungeons's Turn (player controls dungeon).
     
     Processes:
     - Left Clicks: To rotate rooms in the dungeon.
@@ -52,37 +72,48 @@ def handle_normal_game_event(game_event: GameEventT, game_context: GameContextT)
         game_event (GameEventT): The current game event.
         game_context (GameContextT): The game context containing the dungeon.
     """
-    log_event_trace("game event !")
+    log_trace("game event, player turn !")
 
-    ev = game_event[GAME_EVENT_TYPE]
-    ev_type: str | NoneType = fltk.type_ev(ev)
-    if ev_type == None:
-        return
+    dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
 
-    ev_is_key = ev_type.lower() == "touche"
-    key_pressed = None
-    if ev_is_key:
-        key_pressed = ev[fltk_ext.FLTK_EVENT_TK_EVENT].keysym.lower()
+    event_info = event_get_info(game_event)
+    if event_info[EVENT_INFO_TYPE] == None:
+        return None
 
-    log_debug(f"key pressed: {key_pressed}")
-    if ev_type == KEY_X1:
-        # rotate rooms
-        click_postion = fltk_ext.position_souris(ev)
+    log_debug_full(f"key pressed: {event_info[EVENT_INFO_KEY_PRESSED]}")
+    # rotate room
+    if event_info[EVENT_INFO_TYPE] == KEY_X1:
+        game_logic.rotate_room(event_info, game_context)
+    # restart dungeon
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
+        game_logic.reset_game_context(game_context)
+    # player finish turn
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
+        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_PLAYER
 
-        # rotate room at click positons
-        clicked_room_col = click_postion[0] // BLOCK_SCALED_SIZE[0]
-        clicked_room_row = click_postion[1] // BLOCK_SCALED_SIZE[1]
+def handle_game_player_event(game_event: GameEventT, game_context: GameContextT):
+    event_info = event_get_info(game_event)
+    if event_info[EVENT_INFO_TYPE] == None:
+        return None
 
-        # if cursor outside of dungeon do nothing
+    # draw player movement manually
+    if event_info[EVENT_INFO_TYPE] == KEY_X1:
+        game_logic.manually_update_player_path(event_info, game_context)
+    # restart dungeon
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
+        game_logic.reset_game_context(game_context)
+    # finish dungeon turn
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
+        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+        game_logic.do_dungeon_turn(game_context)
+
         dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
-        if clicked_room_col >= dungeon_get_width(dungeon) or clicked_room_row >= dungeon_get_height(dungeon):
-            return False
+        dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS]
+        game_logic.move_dragons_randomly(dungeon, dragons)
 
-        dungeon_rotate_room(dungeon, clicked_room_row, clicked_room_col)
-    elif ev_is_key and key_pressed == KEY_SPACE:
-        log_debug("espace presse")
-    elif ev_is_key and key_pressed == KEY_R:
-        log_debug("'R' presse")
+def handle_game_finish(game_context: GameContextT):
+    fltk.attend_ev()
+    game_context[GAME_CONTEXT_GAME_STATE] = STATE_EXIT
 
 def handle_event(game_event: GameEventT, game_context: GameContextT):
     """
@@ -97,8 +128,18 @@ def handle_event(game_event: GameEventT, game_context: GameContextT):
     """
     game_state = game_context[GAME_CONTEXT_GAME_STATE]
 
-    log_debug_full(f"game state: {game_state}")
+    if fltk.touche_pressee(EXIT_KEY):
+        game_context[GAME_CONTEXT_GAME_STATE] = STATE_EXIT
+        return
+
+    log_trace(f"game state: {game_state}")
+
+    # start menu
     if game_state == STATE_MENU_START:
         handle_start_menu_event(game_event, game_context)
     elif game_state == STATE_GAME_TURN_PLAYER:
-        handle_normal_game_event(game_event, game_context)
+        handle_game_player_event(game_event, game_context)
+    elif game_state == STATE_GAME_TURN_DUNGEON:
+        handle_game_dungeon_event(game_event, game_context)
+    elif game_state == STATE_GAME_DONE_LOST or game_state == STATE_GAME_DONE_WON:
+        handle_game_finish(game_context)

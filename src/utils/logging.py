@@ -8,7 +8,7 @@ LOG_LEVEL_RELEASE = 0x1
 LOG_LEVEL_DEBUG = 0x2
 LOG_LEVEL_DEBUG_FULL = 0x4
 LOG_LEVEL_EVENT = 0x8
-LOG_LEVEL_EVENT_TRACE = 0x10
+LOG_LEVEL_TRACE = 0x10
 LOG_LEVEL_ERROR = 0x20
 
 # LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_DEBUG | LOG_LEVEL_DEBUG_FULL | LOG_LEVEL_EVENT
@@ -39,8 +39,8 @@ def log_debug_full(message: str, new_line: bool = True):
 def log_event(message: str, new_line: bool = True):
     log(LOG_LEVEL_EVENT, message, new_line)
 
-def log_event_trace(message: str, new_line: bool = True):
-    log(LOG_LEVEL_EVENT_TRACE, message, new_line)
+def log_trace(message: str, new_line: bool = True):
+    log(LOG_LEVEL_TRACE, message, new_line)
 
 def log_error(message: str, new_line: bool = True):
     log(LOG_LEVEL_ERROR, message, new_line)
