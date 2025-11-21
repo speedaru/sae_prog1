@@ -126,6 +126,20 @@ def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
 
     return tuple(rotated_room_connections)
 
+def dungeon_room_pos_in_bounds(dungeon: DungeonT, row: int, col: int) -> bool:
+    return col < dungeon_get_width(dungeon) and row < dungeon_get_height(dungeon)
+
+# returns nonetype if out of bounds
+def dungeon_get_room_from_pos(dungeon: DungeonT, pos: tuple[int, int]) -> tuple[int, int] | NoneType:
+    room_col: int = pos[0] // BLOCK_SCALED_SIZE[0]
+    room_row: int = pos[1] // BLOCK_SCALED_SIZE[1]
+
+    # invalid selection, out of bounds
+    if not dungeon_room_pos_in_bounds(dungeon, room_row, room_col):
+        return None
+
+    return (room_row, room_col)
+
 # returns True if successfuly rotated room
 def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:
     """
@@ -157,7 +171,7 @@ def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:
     False
     """
     # check if room in bounds
-    if col >= dungeon_get_width(dungeon) or row >= dungeon_get_height(dungeon):
+    if not dungeon_room_pos_in_bounds(dungeon, row, col):
         return False
 
     dungeon[row][col][ROOM_ROTATION_COUNT] += 1
