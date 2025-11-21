@@ -17,6 +17,21 @@ import src.utils.fltk_extensions as fltk_ext
 from src.utils.logging import *
 
 
+# -------------------- FUNCTIONS --------------------
+def handle_room_rotation(ev: FltkEvent, dungeon: DungeonT):
+    # rotate rooms
+    click_postion: tuple[int, int] = fltk_ext.position_souris(ev)
+
+    clicked_room = dungeon_get_room_from_pos(dungeon, click_postion)
+    if clicked_room == None:
+        log_debug("room selected is OOB")
+        return
+
+    # rotate room at click positons
+    dungeon_rotate_room(dungeon, clicked_room[0], clicked_room[1])
+
+
+# -------------------- GENERAL EVENT HANDLERS --------------------
 def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
     """
     Handles events occurring while in the Start Menu state.
@@ -46,7 +61,7 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
 
 def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT):
     """
-    Handles events occurring during the Player's Turn.
+    Handles events occurring during the Dungeons's Turn (player controls dungeon).
     
     Processes:
     - Left Clicks: To rotate rooms in the dungeon.
@@ -57,7 +72,9 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
         game_event (GameEventT): The current game event.
         game_context (GameContextT): The game context containing the dungeon.
     """
-    log_event_trace("game event !")
+    log_event_trace("game event, player turn !")
+
+    dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
 
     event_info = event_get_info(game_event)
     if event_info[EVENT_INFO_TYPE] == None:
