@@ -6,10 +6,15 @@ from pathlib import Path
 # external librairies
 import libs.fltk as fltk
 
-# import games project files
-from src.config import DUNGEON_FILES_DIR
+# engine
 from src.engine.structs.dungeon import DungeonT, dungeon_parse_file
+
+# config and game
+from src.config import DUNGEON_FILES_DIR
 from src.game.game_config import *
+from src.game.keys import *
+
+# utils
 from src.utils.logging import *
 from src.utils.geom import * 
 from src.engine.asset_manager import ASSETS_DIR
@@ -30,6 +35,18 @@ def _positions_init(positions: _PositionsT,
                    dungeon_name: str = "",
                    pos: tuple[int, int] = (0, 0),
                    size: tuple[int, int] = (0, 0)):
+    """
+    Initializes the position structure for a menu item.
+
+    This structure holds the metadata required to draw the menu item text
+    and detect clicks on it (bounding box calculation).
+
+    Args:
+        positions (_PositionsT): The list to initialize (modified in-place).
+        dungeon_name (str): The name of the dungeon file.
+        pos (tuple[int, int]): The (x, y) coordinates of the text.
+        size (tuple[int, int]): The (width, height) of the text.
+    """
     
     if len(positions) != _POSITIONS_COUNT:
         positions[:] = [None] * _POSITIONS_COUNT
@@ -39,17 +56,54 @@ def _positions_init(positions: _PositionsT,
     positions[_POSITIONS_SIZE] = size
 
 
-def _get_tl(position: _PositionsT):
+def _get_tl(position: _PositionsT) -> tuple[int, int]:
+    """
+    Gets the Top-Left coordinate of the menu item's bounding box.
+
+    Args:
+        position (_PositionsT): The initialized position structure.
+
+    Returns:
+        tuple[int, int]: The (x, y) coordinates.
+    """
     return position[_POSITIONS_POS]
 
-def _get_br(position: _PositionsT):
+def _get_br(position: _PositionsT) -> tuple[int, int]:
+    """
+    Calculates the Bottom-Right coordinate of the menu item's bounding box.
+
+    This is derived from the position (Top-Left) and the size of the text.
+
+    Args:
+        position (_PositionsT): The initialized position structure.
+
+    Returns:
+        tuple[int, int]: The (x + width, y + height) coordinates.
+    """
     x, y = position[_POSITIONS_POS]
     w, h = position[_POSITIONS_SIZE]
     return (x + w, y + h)
 
 
 def render(game_context: GameContextT) -> DungeonT | NoneType: 
-    #background
+    """
+    Renders the Start Menu interface and handles dungeon selection.
+
+    Process:
+    1. Scans the `dungeons/` directory for dungeon files.
+    2. Calculates the layout to center the dungeon names on the screen.
+    3. Draws the names using FLTK.
+    4. Checks for a Left Click event.
+    5. If a click occurs inside a dungeon name's bounding box, parses that dungeon file.
+
+    Args:
+        game_context (GameContextT): The global game context containing events.
+
+    Returns:
+        DungeonT | NoneType: The parsed Dungeon structure if a file was clicked,
+                             otherwise None.
+    """
+    # background
     BACKGROUND_FILE = "start_background.png"
     background_path = os.path.join(ASSETS_DIR, BACKGROUND_FILE)
     fltk.image(0,0,background_path,ancrage="nw")
@@ -83,25 +137,18 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
 
         y += text_size[1] + PADDING_Y
 
-    fltk.mise_a_jour()
-
-    # handling left click
-    ev = game_context[GAME_CONTEXT_EVENT][GAME_EVENT_TYPE]
-    if fltk.type_ev(ev) == "ClicGauche":
-        click_pos = fltk_ext.position_souris(ev)  # mouse coordinates
+    # if left clicked pressed return selected dungeon as EventDataT
+    ev: FltkEvent = game_context[GAME_CONTEXT_EVENT][GAME_EVENT_TYPE]
+    if fltk.type_ev(ev) == KEY_X1:
+        click_pos = fltk_ext.position_souris(ev)  # coordonnées de la souris
 
         # check which text was clicked
         for position in positions:
             tl = _get_tl(position)
             br = _get_br(position)
-            log_debug(f"clique{click_pos}")
-            log_debug(f"tl,br{tl,br}")
             if in_rectangle(click_pos, tl, br):
-                log_debug("OUI")
                 dungeon = DungeonT()
-                dungeon_file_path = os.path.join(DUNGEON_FILES_DIR,
-                                                position[_POSITIONS_DUNGEON])
-                log_debug(f"FICHIERS {dungeon_file_path} ")
+                dungeon_file_path = os.path.join(DUNGEON_FILES_DIR, position[_POSITIONS_DUNGEON])
                 dungeon_parse_file (dungeon,dungeon_file_path)
                 return dungeon
 

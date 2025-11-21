@@ -2,6 +2,12 @@ import libs.fltk as fltk
 from libs.fltk import FltkEvent, PhotoImage, Anchor
 
 
+# constants
+FLTK_EVENT_EV_TYPE = 0
+FLTK_EVENT_TK_EVENT = 1
+FLTK_EVENT_COUNT = 2
+
+
 def fenetre_titre(nouveau_titre: str) -> None:
     """
     Change le titre de la fenêtre actuelle.
