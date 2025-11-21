@@ -89,21 +89,21 @@ def manually_update_player_path(event_info: EventInfoT, game_context: GameContex
     if adventurer[ADVENTURER_PATH] == None:
         adventurer[ADVENTURER_PATH] = MovementPathT()
 
-    # if not first room in path then ensure its adjacent to previous room
+    # ensure previous room adjacent and connected to clicked pos
+    dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
     movement_path: MovementPathT = adventurer[ADVENTURER_PATH]
-    if len(movement_path) > 0:
-        dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
-
+    previous_clicked_room_pos: RoomPosT = adventurer[ENTITY_ROOM_POS] # set last click room to player pos if 0 clicks
+    if len(movement_path) > 0: # if not first click then set previous click room to last click pos
         # get previous clicked room positon
         previous_clicked_room_pos = movement_path[-1]
 
-        # get room representations from dungeon: [BLOCK_ID, ROTATION_COUNT]
-        clicked_room: RoomT = dungeon[clicked_room_pos[1]][clicked_room_pos[0]]
-        previous_clicked_room: RoomT = dungeon[previous_clicked_room_pos[1]][previous_clicked_room_pos[0]] # room block repr
+    # get room representations from dungeon: [BLOCK_ID, ROTATION_COUNT]
+    clicked_room: RoomT = dungeon[clicked_room_pos[1]][clicked_room_pos[0]]
+    previous_clicked_room: RoomT = dungeon[previous_clicked_room_pos[1]][previous_clicked_room_pos[0]] # room block repr
 
-        # if clicked room not adjacent to previously clicked room then dont add it to path
-        if not dungeon_rooms_connected(clicked_room, clicked_room_pos, previous_clicked_room, previous_clicked_room_pos):
-            return
+    # if clicked room not adjacent to previously clicked room then dont add it to path
+    if not dungeon_rooms_connected(clicked_room, clicked_room_pos, previous_clicked_room, previous_clicked_room_pos):
+        return
 
     # clicked room is valid, add it to path
     movement_path.append(clicked_room_pos)
@@ -156,6 +156,9 @@ def do_dungeon_turn(game_context: GameContextT):
     # move adventurer along path
     # pathfinding.find_and_set_adventurer_path(adventurer, dragons)
     pathfinding.do_adventurer_path(adventurer)
+
+    # handle collisions between adventurer and dragons
+    do_collisions(game_context)
 
     adventurer[ADVENTURER_PATH] = None
 
