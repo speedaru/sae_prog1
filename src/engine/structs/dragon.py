@@ -17,7 +17,7 @@ DragonT = list[RoomPosT | int]
 DRAGON_COUNT = ENTITY_COUNT
 
 
-def dragon_init(dragon: DragonT, level: int = 1, room_pos: list[int] = [0, 0]):
+def dragon_init(dragon: DragonT, level: int = 1, room_pos: RoomPosT = (0, 0)):
     """
     Initializes a dragon structure with a specific level and position.
 
@@ -53,7 +53,7 @@ def dragon_render(dragon: DragonT, assets: AssetsT):
     entity_render(dragon, dragon_image)
 
 # if no count set it will automatically calculate number of dragons
-def dragon_create_dragons(dragons: list[DragonT], dungeon_size: tuple[int, int], count: int | NoneType = None):
+def dragon_create_dragons(dragons: list[DragonT], dungeon_size: DungeonSizeT, count: int | NoneType = None):
     """
     Generates and appends multiple dragons to the list, with random positions.
     
@@ -85,9 +85,19 @@ def dragon_create_dragons(dragons: list[DragonT], dungeon_size: tuple[int, int],
     assert(not isinstance(count, NoneType)) # count not none
     assert(count > 0) # at least 1 dragon
 
-    for _ in range(count):
+    for i in range(count):
         d = DragonT()
-        random_room = [randrange(0, dungeon_size[0]), randrange(0, dungeon_size[1])]
-        log_debug_full(f"random room ({dungeon_size[0], dungeon_size[1]}): {random_room}")
-        dragon_init(d, room_pos=random_room)
+
+        # put dragon in random room
+        random_col = randrange(0, dungeon_size[DUNGEON_SIZE_COL])
+        random_row = randrange(0, dungeon_size[DUNGEON_SIZE_ROW])
+
+        # create room depending on room pos representation
+        random_room = (0, 0)
+        if ROOM_POS_COL == 0 and ROOM_POS_ROW == 1:
+            random_room: RoomPosT = (random_col, random_row)
+        elif ROOM_POS_ROW == 0 and ROOM_POS_COL == 1:
+            random_room: RoomPosT = (random_row, random_col)
+
+        dragon_init(d, room_pos=random_room, level=(i + 1))
         dragons.append(d)

@@ -9,15 +9,48 @@ from src.engine.asset_manager import *
 # first int corresponds to block index (inside asset_manager)
 # second int corresponds to how many times we need to rotate it (clockwise)
 RoomT = list[int]
-RoomPosT = tuple[int, int] # room location in DungeonT
-RoomConnectionsT = tuple[bool, bool, bool, bool]
-DungeonT = list[list[RoomT]] # nxn matrix of rooms
 
 ROOM_BLOCK_ID = 0
 ROOM_ROTATION_COUNT = 1
 
+RoomPosT = tuple[int, int]
+ROOM_POS_COL = 0
+ROOM_POS_ROW = 1
+
+RoomConnectionsT = tuple[bool, bool, bool, bool]
+ROOM_CONNECTION_UP = 0
+ROOM_CONNECTION_RIGHT = 1
+ROOM_CONNECTION_DOWN = 2
+ROOM_CONNECTION_LEFT = 3
+
+DungeonT = list[list[RoomT]] # nxn matrix of rooms
+
+DungeonSizeT = RoomPosT # alias cuz also cols x rows
+DUNGEON_SIZE_COL = ROOM_POS_COL
+DUNGEON_SIZE_ROW = ROOM_POS_ROW
 
 # ---------- MANIPULATION FUNCTIONS ----------
+
+def room_pos_create(col: int, row: int) -> RoomPosT:
+    """
+    create a room pos depending on row col or col or row system
+
+    Doctest:
+    >>> ROOM_POS_COL = 0
+    >>> ROOM_POS_ROW = 1
+    >>> create_room_pos(1, 0)
+    (1, 0)
+    >>> ROOM_POS_ROW = 0
+    >>> ROOM_POS_COL = 1
+    >>> create_room_pos(1, 0)
+    (0, 1)
+    """
+    if ROOM_POS_COL == 0 and ROOM_POS_ROW == 1:
+        return (col, row)
+    elif ROOM_POS_ROW == 1 and ROOM_POS_COL == 0:
+        return (row, col)
+
+    return (-1, -1)
 
 def dungeon_room_init() -> RoomT:
     """src/engine/structs/dungeon.py
@@ -127,11 +160,106 @@ def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
 
     return tuple(rotated_room_connections)
 
-def dungeon_room_pos_in_bounds(dungeon: DungeonT, row: int, col: int) -> bool:
-    return col < dungeon_get_width(dungeon) and row < dungeon_get_height(dungeon)
+def dungeon_get_room_distance(room1: RoomPosT, room2: RoomPosT) -> int:
+    """
+    get distance between 2 rooms
 
-# returns nonetype if out of bounds
-def dungeon_get_room_from_pos(dungeon: DungeonT, pos: tuple[int, int]) -> tuple[int, int] | NoneType:
+    >>> dungeon_get_room_distance((1, 1), (2, 2))
+    2
+    >>> dungeon_get_room_distance((1, 1), (1, 2))
+    1
+    >>> dungeon_get_room_distance(None, (1, 2))
+    """
+    # invalid input
+    if not isinstance(room1, tuple) or len(room1) != 2 or not isinstance(room2, tuple) or len(room2) != 2:
+        return None
+
+    # dx is col difference dy is row difference
+    dx = abs(room1[0] - room2[0])
+    dy = abs(room1[1] - room2[1])
+
+    # return sum
+    return dx + dy
+
+def dungeon_rooms_connected(room1: RoomT, room1_pos: RoomPosT, room2: RoomT, room2_pos: RoomPosT):
+    """
+    roomx: room rotation and connections representation
+    roox_pos: room location in dungeon
+
+    check to see if 2 rooms are connected:
+        - rooms have a distance of 1
+        - rooms have connecting doors
+
+    Doctest:
+
+    >>> # Set up constants for doctests (mimicking user's environment)
+    >>> QUAD = [BLOCK_QUAD, 0] # (T, T, T, T)
+    >>> VERTICAL_OPPOSITE = [BLOCK_DOUBLE_OPPOSITE, 0] # '║' (T, F, T, F)
+    >>> HORIZONTAL_OPPOSITE = [BLOCK_DOUBLE_OPPOSITE, 1] # '═' (F, T, F, T)
+
+    >>> # CASE 1: Connected - QUAD at (1, 1) next to VERTICAL_OPPOSITE at (1, 2) (Below)
+    >>> # Room1 (1, 1) -> Down is T. Room2 (1, 2) -> Up is T. Connected.
+    >>> dungeon_rooms_connected(QUAD, (1, 1), VERTICAL_OPPOSITE, (1, 2))
+    True
+
+    >>> # CASE 2: Connected - QUAD at (1, 1) next to HORIZONTAL_OPPOSITE at (2, 1) (Right)
+    >>> # Room1 (1, 1) -> Right is T. Room2 (2, 1) -> Left is T. Connected.
+    >>> dungeon_rooms_connected(QUAD, (1, 1), HORIZONTAL_OPPOSITE, (2, 1))
+    True
+
+    >>> # CASE 3: Not connected - Doors not aligned (Horizontal next to Horizontal)
+    >>> # Room1: HORIZONTAL_OPPOSITE ('═') at (1, 1). Connections: (F, T, F, T)
+    >>> # Room2: HORIZONTAL_OPPOSITE ('═') at (2, 1) (Right). Connections: (F, T, F, T)
+    >>> # Room1 Right is T. Room2 Left is T. Connected. (Original doctest was flawed, fixed here)
+    >>> dungeon_rooms_connected(HORIZONTAL_OPPOSITE, (1, 1), HORIZONTAL_OPPOSITE, (2, 1))
+    True
+
+    >>> # CASE 4: Not connected - Distance > 1
+    >>> dungeon_rooms_connected(QUAD, (1, 1), QUAD, (3, 3))
+    False
+    
+    >>> # CASE 5: Not connected - Doors closed (Horizontal next to Vertical)
+    >>> # Room1: HORIZONTAL_OPPOSITE ('═') at (1, 1) -> Down is F (Index 2).
+    >>> # Room2: VERTICAL_OPPOSITE ('║') at (1, 2) (Below) -> Up is T (Index 0).
+    >>> # Room1 needs Down exit, but only has Left/Right.
+    >>> dungeon_rooms_connected(HORIZONTAL_OPPOSITE, (1, 1), VERTICAL_OPPOSITE, (1, 2))
+    False
+    """
+    # adjacent rooms must have a distance of 1
+    distance = dungeon_get_room_distance(room1_pos, room2_pos)
+    if distance != 1:
+        return False
+
+    # get up, right, down, left connections
+    room1_connections = dungeon_room_get_connections(room1)
+    room2_connections = dungeon_room_get_connections(room2)
+
+    # calculate relative position
+    # dx = col difference, dy = row difference
+    dx = room2_pos[0] - room1_pos[0]
+    dy = room2_pos[1] - room1_pos[1]
+
+    # check aligned doors based on rel pos
+    if dy == 1 and dx == 0:
+        return room1_connections[2] and room2_connections[0]
+    elif dy == -1 and dx == 0:
+        return room1_connections[0] and room2_connections[2]
+    elif dx == 1 and dy == 0:
+        return room1_connections[1] and room2_connections[3]
+    elif dx == -1 and dy == 0:
+        return room1_connections[3] and room2_connections[1]
+
+def dungeon_room_pos_in_bounds(dungeon: DungeonT, room_pos: RoomPosT) -> bool:
+    # check if negative values
+    if room_pos[ROOM_POS_COL] < 0 or room_pos[ROOM_POS_ROW] < 0:
+        return False
+
+    return room_pos[ROOM_POS_COL] < dungeon_get_width(dungeon) and room_pos[ROOM_POS_ROW] < dungeon_get_height(dungeon)
+
+def dungeon_get_room_from_pos(dungeon: DungeonT, pos: tuple[int, int]) -> RoomPosT | NoneType:
+    """
+    returns nonetype if out of bounds
+    """
     room_col: int = pos[0] // BLOCK_SCALED_SIZE[0]
     room_row: int = pos[1] // BLOCK_SCALED_SIZE[1]
 
@@ -139,7 +267,69 @@ def dungeon_get_room_from_pos(dungeon: DungeonT, pos: tuple[int, int]) -> tuple[
     if not dungeon_room_pos_in_bounds(dungeon, room_row, room_col):
         return None
 
-    return (room_row, room_col)
+    return room_pos_create(col=room_col, row=room_row)
+
+def dungeon_get_valid_neighbor_rooms(dungeon: DungeonT, current_room_pos: RoomPosT) -> list[RoomPosT]:
+    """
+    Retourne la liste des positions de salles voisines immédiatement adjacentes 
+    et connectées à la salle actuelle (validé par les portes).
+
+    Args:
+        dungeon: La structure complète du donjon.
+        current_room_pos: La position actuelle de la salle (col, row).
+
+    Returns:
+        list[RoomPosT]: Liste des positions des salles voisines connectées.
+
+    Doctest:
+    >>> # Setup a 2x2 dungeon: All QUAD rooms (all connections possible)
+    >>> D = [[[BLOCK_QUAD, 0], [BLOCK_QUAD, 0]], [[BLOCK_QUAD, 0], [BLOCK_QUAD, 0]]]
+    >>> # CASE 1: Center room (1, 0) should connect to (0, 0) Left, (1, 1) Down
+    >>> # (0, 0) is Row 0, Col 0. (1, 0) is Row 0, Col 1.
+    >>> dungeon_get_valid_neighbor_rooms(D, room_pos_create(col=0, row=0))
+    [(1, 0), (0, 1)]
+    
+    >>> # CASE 2: Edge room (1, 1) should connect to (0, 1) Left, (1, 0) Up
+    >>> # (1, 1) is Row 1, Col 1.
+    >>> dungeon_get_valid_neighbor_rooms(D, room_pos_create(col=1, row=1))
+    [(1, 0), (0, 1)]
+    
+    >>> # CASE 3: Restrictive Room. Room at (0, 0) has only UP connection open.
+    >>> # Neighbor at (1, 0) is Quad (all open).
+    >>> D2 = [[[BLOCK_SINGLE, 0], [BLOCK_QUAD, 0]], [[BLOCK_QUAD, 0], [BLOCK_QUAD, 0]]]
+    >>> # Room at (0, 0) only allows UP. Neighbor above is OOB.
+    >>> dungeon_get_valid_neighbor_rooms(D2, room_pos_create(col=0, row=0))
+    []
+    """
+    current_col = current_room_pos[ROOM_POS_COL]
+    current_row = current_room_pos[ROOM_POS_ROW]
+    
+    current_room = dungeon[current_row][current_col]
+    valid_neighbors = []
+
+    possible_deltas = [
+        (0, -1, ROOM_CONNECTION_UP),
+        (1, 0, ROOM_CONNECTION_RIGHT),
+        (0, 1, ROOM_CONNECTION_DOWN),
+        (-1, 0, ROOM_CONNECTION_LEFT)
+    ]
+
+    for d_col, d_row, conn_index in possible_deltas:
+        new_col = current_col + d_col
+        new_row = current_row + d_row
+        new_pos = room_pos_create(new_col, new_row)
+        
+        # check dungeon limits
+        if not dungeon_room_pos_in_bounds(dungeon, room_pos_create(col=new_col, row=new_row)):
+            continue
+            
+        neighbor_room = dungeon[new_row][new_col]
+
+        # check if rooms are adjacent and doors connected
+        if dungeon_rooms_connected(current_room, current_room_pos, neighbor_room, new_pos):
+            valid_neighbors.append(new_pos)
+            
+    return valid_neighbors
 
 # returns True if successfuly rotated room
 def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:
@@ -172,7 +362,7 @@ def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:
     False
     """
     # check if room in bounds
-    if not dungeon_room_pos_in_bounds(dungeon, row, col):
+    if not dungeon_room_pos_in_bounds(dungeon, room_pos_create(col=col, row=row)):
         return False
 
     dungeon[row][col][ROOM_ROTATION_COUNT] += 1

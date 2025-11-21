@@ -7,7 +7,7 @@ import src.utils.fltk_extensions as fltk_ext
 from src.utils.logging import *
 
 # types
-EntityT = list[list[int] | int]
+EntityT = list[RoomPosT | int]
 
 # enum for adventurer structure
 ENTITY_ROOM_POS = 0
@@ -15,7 +15,7 @@ ENTITY_LEVEL = 1
 ENTITY_COUNT = 2
 
 
-def entity_init(entity: EntityT, level: int = 1, room_pos: list[int] = [0, 0], entity_size: int = ENTITY_COUNT):
+def entity_init(entity: EntityT, level: int = 1, room_pos: RoomPosT = (0, 0), entity_size: int = ENTITY_COUNT):
     """
     Initializes a generic entity (like an adventurer or a dragon).
 
@@ -31,21 +31,21 @@ def entity_init(entity: EntityT, level: int = 1, room_pos: list[int] = [0, 0], e
 
     >>> e = []
     >>> # Standard initialization
-    >>> entity_init(e, level=5, room_pos=[2, 3])
+    >>> entity_init(e, level=5, room_pos=(2, 3))
     >>> e
-    [[2, 3], 5]
+    [(2, 3), 5]
 
     >>> # Accessing data with constants
     >>> e[ENTITY_LEVEL]
     5
     >>> e[ENTITY_ROOM_POS]
-    [2, 3]
+    (2, 3)
 
     >>> # Default initialization
     >>> e2 = [None, None]
     >>> entity_init(e2)
     >>> e2
-    [[0, 0], 1]
+    [(0, 0), 1]
     """
     if len(entity) != entity_size:
         entity[:] = [None] * entity_size
@@ -70,8 +70,8 @@ def entity_render(entity: EntityT, image):
     entity_pos: list[int] = entity[ENTITY_ROOM_POS]
 
     # get draw position based on room location
-    draw_x = room_size[0] * entity_pos[0] 
-    draw_y = room_size[1] * entity_pos[1]
+    draw_x = room_size[0] * entity_pos[0]
+    draw_y = room_size[1] * entity_pos[1] 
 
     # add to draw position so we draw the entity in the center of the room and not corner
     draw_x += (room_size[0] / 2) - (CHARACTERS_SIZES[0] / 2)

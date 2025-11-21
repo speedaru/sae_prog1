@@ -9,6 +9,7 @@ from src.utils.logging import log_release, log_debug, log_debug_full
 
 import src.engine.engine_config as engine_config
 import src.engine.fps_manager as fps_manager
+import src.engine.game_logic as game_logic
 from src.engine.asset_manager import *
 from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
@@ -66,6 +67,7 @@ def render_game(game_context: GameContextT):
     if adventurer != None:
         log_debug_full(f"rendering adventurer: level: room_pos: {adventurer[ENTITY_ROOM_POS]} {adventurer[ENTITY_LEVEL]}")
         adventurer_render(adventurer, assets)
+        adventurer_render_path(adventurer)
     else:
         log_error("cant render adventurer because adventurer is None")
 
@@ -77,6 +79,26 @@ def render_game(game_context: GameContextT):
     else:
         log_error("cant render dragons because dragons is None")
 
+def render_game_end(game_context: GameContextT):
+    GAME_END_MESSAGE_FONT_SIZE = 48
+    game_state: GameStateT = game_context[GAME_CONTEXT_GAME_STATE]
+
+    message = ""
+    message_color = ""
+    if game_state == STATE_GAME_DONE_WON:
+        message = "Partie gagnée !"
+        message_color = "lime"
+    elif game_state == STATE_GAME_DONE_LOST:
+        message = "Partie perdue"
+        message_color = "red"
+
+    message_size = fltk.taille_texte(message, taille=GAME_END_MESSAGE_FONT_SIZE)
+    message_size = fltk.taille_texte(message, taille=GAME_END_MESSAGE_FONT_SIZE)
+    center_x, center_y = (WINDOW_SIZE[0] / 2) - (message_size[0] / 2), (WINDOW_SIZE[1] / 2) - (message_size[1] / 2)
+    fltk.texte(center_x, center_y, message, couleur=message_color, taille=GAME_END_MESSAGE_FONT_SIZE)
+
+    # so it calls event handler to then update game state to STATE_EXIT
+    return game_state
 
 def render(game_context: GameContextT) -> GameEventDataT:
     """
@@ -103,22 +125,22 @@ def render(game_context: GameContextT) -> GameEventDataT:
     if game_state == STATE_MENU_START:
         event_data = render_start_menu(game_context)
     elif game_state == STATE_GAME_TURN_PLAYER or game_state == STATE_GAME_TURN_DUNGEON:
-        dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS] 
-
-        # initialize dragons if none
-        if len(dragons) == 0:
-            dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
-            assert(len(dungeon) > 0) # make sure dungeon is not empty
-
-            dungeon_size = (len(dungeon), len(dungeon[0]))
-            dragon_create_dragons(dragons, dungeon_size)
-
         render_game(game_context)
+    # render game end menu if game ended
+    elif game_state == STATE_GAME_DONE_WON or game_state == STATE_GAME_DONE_LOST:
+        event_data = render_game_end(game_context)
 
     # render game state info
     game_state_render(game_context[GAME_CONTEXT_GAME_STATE])
 
     return event_data
+
+def handle_logic(game_context: GameContextT):
+    game_state: GameStateT = game_context[GAME_CONTEXT_GAME_STATE]
+
+    if game_state == STATE_GAME_TURN_PLAYER or game_state == STATE_GAME_TURN_DUNGEON:
+        # handle collisions between adventurer and dragons
+        game_logic.do_collisions(game_context)
 
 
 def main_loop():
@@ -151,9 +173,6 @@ def main_loop():
     if not asset_manager_initialized(assets):
         assets = asset_manager_init()
 
-    # create adventurer
-    adventurer_init(adventurer)
-    
     # init game event
     game_event: GameEventT | NoneType = [None] * GAME_EVENT_COUNT
 
@@ -162,8 +181,11 @@ def main_loop():
     game_context[GAME_CONTEXT_GAME_STATE] = game_state
     game_context[GAME_CONTEXT_EVENT] = game_event
     game_context[GAME_CONTEXT_DUNGEON] = current_dungeon
+    game_context[GAME_CONTEXT_ORIGINAL_DUNGEON] = DungeonT() # later filled by ref
     game_context[GAME_CONTEXT_ADVENTURER] = adventurer
     game_context[GAME_CONTEXT_DRAGONS] = dragons
+    game_context[GAME_CONTEXT_ORIGINAL_ADVENTURER] = AdventurerT() # later filled by ref
+    game_context[GAME_CONTEXT_ORIGINAL_DRAGONS] = list[DragonT]() # later filled by ref
 
     while True:
         # handle fps cap and delta time
@@ -182,14 +204,19 @@ def main_loop():
         gui.render()
 
         # handle event only if there is event to handle
-        if not isinstance(event_type, NoneType):
+        if event_type != None or event_data != None:
+        # if event_type != None:
             game_event[GAME_EVENT_DATA] = event_data
 
             event_handler.handle_event(game_event, game_context)
 
-        # exit game
+        # handle specific logic every frame
+        handle_logic(game_context)
+
+        # end game
         if game_context[GAME_CONTEXT_GAME_STATE] == STATE_EXIT:
             break
 
         fps_manager.sleep_to_cap_fps(dt)
         # log_debug_full(f"fps: {fps_manager.calculate_fps(dt)}")
+
