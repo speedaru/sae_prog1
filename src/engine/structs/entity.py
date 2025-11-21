@@ -16,6 +16,37 @@ ENTITY_COUNT = 2
 
 
 def entity_init(entity: EntityT, level: int = 1, room_pos: list[int] = [0, 0]):
+    """
+    Initializes a generic entity (like an adventurer or a dragon).
+
+    It sets up the entity structure with a level and a position in the dungeon.
+    If the list size is incorrect, it resizes it to fit the entity structure.
+
+    Args:
+        entity (EntityT): The list representing the entity (modified in-place).
+        level (int, optional): The entity's level. Defaults to 1.
+        room_pos (list[int], optional): The [x, y] position in the dungeon. Defaults to [0, 0].
+
+    Doctest :
+
+    >>> e = []
+    >>> # Standard initialization
+    >>> entity_init(e, level=5, room_pos=[2, 3])
+    >>> e
+    [[2, 3], 5]
+
+    >>> # Accessing data with constants
+    >>> e[ENTITY_LEVEL]
+    5
+    >>> e[ENTITY_ROOM_POS]
+    [2, 3]
+
+    >>> # Default initialization
+    >>> e2 = [None, None]
+    >>> entity_init(e2)
+    >>> e2
+    [[0, 0], 1]
+    """
     if len(entity) != ENTITY_COUNT:
         entity[:] = [None] * ENTITY_COUNT
 
@@ -23,6 +54,18 @@ def entity_init(entity: EntityT, level: int = 1, room_pos: list[int] = [0, 0]):
     entity[ENTITY_ROOM_POS] = room_pos
 
 def entity_render(entity: EntityT, image):
+    """
+    Renders an entity on the screen centered in its room.
+
+    Calculates the exact pixel coordinates based on the room position and the block size,
+    then draws the entity's image and its level (as text).
+
+    Args:
+        entity (EntityT): The entity structure to render.
+        image: The tkinter PhotoImage object representing the entity.
+
+    Note: This function performs graphical operations and cannot be tested via doctest.
+    """
     room_size = BLOCK_SCALED_SIZE
     entity_pos: list[int] = entity[ENTITY_ROOM_POS]
 

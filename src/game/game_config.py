@@ -1,3 +1,28 @@
+"""
+Game Configuration Module.
+
+This module holds global constants, type definitions, and index mappings (enums)
+used across the game. It serves as a central point for game settings.
+
+It defines:
+- Window settings (size).
+- Game keys (exit).
+- Data structures for the Game Context and Game Events (using lists).
+- Indices for accessing these list-based structures.
+
+Global Constants:
+    WINDOW_SIZE: Dimensions of the game window [width, height].
+    EXIT_KEY: The key used to exit the game.
+    DUNGEON_DRAGONS_COUNT: Default number of dragons.
+
+Context Indices (Pseudo-Enums):
+    Used to access `GameContextT` list elements.
+    GAME_CONTEXT_ASSETS, GAME_CONTEXT_GAME_STATE, etc.
+
+Event Indices (Pseudo-Enums):
+    Used to access `GameEventT` list elements.
+    GAME_EVENT_TYPE, GAME_EVENT_DATA.
+"""
 from types import NoneType
 from typing import Any
 
