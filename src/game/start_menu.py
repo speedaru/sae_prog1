@@ -12,6 +12,7 @@ from src.engine.structs.dungeon import DungeonT, dungeon_parse_file
 from src.game.game_config import *
 from src.utils.logging import *
 from src.utils.geom import * 
+from src.engine.asset_manager import ASSETS_DIR
 
 import src.utils.fltk_extensions as fltk_ext 
 
@@ -20,10 +21,10 @@ import src.utils.fltk_extensions as fltk_ext
 _PositionsT = list[str | tuple[int, int] | int]
 
 # enum for positions structure
-_POSITIONS_DUNGEON = 0      # nom du fichier dungeon (string)
+_POSITIONS_DUNGEON = 0      # dungeon_filename (string)
 _POSITIONS_POS = 1          # position (tuple[int, int])
-_POSITIONS_SIZE = 2         # taille du texte (largeur, hauteur)
-_POSITIONS_COUNT = 3        # nombre total de champs
+_POSITIONS_SIZE = 2         # text_size (width, height)
+_POSITIONS_COUNT = 3        # total_fields_count
 
 def _positions_init(positions: _PositionsT,
                    dungeon_name: str = "",
@@ -48,7 +49,12 @@ def _get_br(position: _PositionsT):
 
 
 def render(game_context: GameContextT) -> DungeonT | NoneType: 
-    # récupération des fichiers de donjons
+    #background
+    BACKGROUND_FILE = "start_background.png"
+    background_path = os.path.join(ASSETS_DIR, BACKGROUND_FILE)
+    fltk.image(0,0,background_path,ancrage="nw")
+
+    # retrieving dungeon files
     path_dungeons = Path(DUNGEON_FILES_DIR)
 
     dungeon_files = []
@@ -56,21 +62,21 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
         if os.path.isfile(os.path.join(path_dungeons, f)):
             dungeon_files.append(f)
 
-    # affichage des noms centrés
+    # displaying centered names
     x = fltk.largeur_fenetre() / 2
     y = fltk.hauteur_fenetre() / 2 - 150
 
     PADDING_Y = 35
-    positions: list[_PositionsT] = []  # pour stocker les positions
+    positions: list[_PositionsT] = []  # to store positions
 
     for dungeon_name in dungeon_files:
         text = dungeon_name[:-4]  # remove ".txt"
         text_size = fltk.taille_texte(text)
 
         center_x = x - (text_size[0] / 2)
-        fltk.texte(center_x, y, text)
+        fltk.texte(center_x, y, text, couleur="white")
 
-        # créer et initialiser la structure complète
+        # create and initialize the complete structure
         pos_struct: _PositionsT = [None] * _POSITIONS_COUNT
         _positions_init(pos_struct, dungeon_name=dungeon_name, pos=(center_x, y), size=text_size)
         positions.append(pos_struct)
@@ -79,12 +85,12 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
 
     fltk.mise_a_jour()
 
-    # gestion du clic gauche
+    # handling left click
     ev = game_context[GAME_CONTEXT_EVENT][GAME_EVENT_TYPE]
     if fltk.type_ev(ev) == "ClicGauche":
-        click_pos = fltk_ext.position_souris(ev)  # coordonnées de la souris
+        click_pos = fltk_ext.position_souris(ev)  # mouse coordinates
 
-        # vérifier sur quel texte on a cliqué
+        # check which text was clicked
         for position in positions:
             tl = _get_tl(position)
             br = _get_br(position)
