@@ -10,6 +10,19 @@ from src.utils.logging import *
 
 
 def create_window(window_title: str, icon_file: str):
+    """
+    Creates and initializes the main game window using FLTK.
+
+    It sets the window dimensions based on the game configuration, applies the title,
+    and sets the window icon (Windows OS only).
+
+    Args:
+        window_title (str): The text to display in the window's title bar.
+        icon_file (str): The path to the .ico file for the window icon.
+
+    Note:
+        This function triggers graphical calls and cannot be tested via doctest.
+    """
     width = game_config.WINDOW_SIZE[0]
     height = game_config.WINDOW_SIZE[1]
 
@@ -23,10 +36,26 @@ def create_window(window_title: str, icon_file: str):
         fltk_ext.fenetre_icone(icon_file)
 
 def end_window():
+    """
+    Closes and destroys the game window.
+    
+    Should be called when the game loop ends to free resources.
+    """
     fltk.ferme_fenetre()
 
 def start_render():
+    """
+    Prepares the canvas for a new frame by clearing all previous drawings.
+    
+    This is typically the first step in the rendering loop.
+    """
     fltk.efface_tout()
 
 def render():
+    """
+    Updates the window display to show the newly drawn frame.
+    
+    This function forces the FLTK engine to refresh the screen content.
+    It effectively marks the end of the rendering phase for the current frame.
+    """
     fltk.mise_a_jour()

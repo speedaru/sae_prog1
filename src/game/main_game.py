@@ -21,12 +21,33 @@ from src.game.game_config import *
 
 
 def render_start_menu(game_context: GameContextT) -> GameEventDataT | NoneType:
+    """
+    Renders the start menu and handles the dungeon selection logic.
+
+    Delegates the rendering and interaction handling to the `start_menu` module.
+
+    Args:
+        game_context (GameContextT): The global game context containing assets and events.
+
+    Returns:
+        GameEventDataT | NoneType: Returns the selected Dungeon structure if a choice is made,
+                                   otherwise returns None.
+    """
     # get event data
     selected_dungeon: DungeonT | NoneType = start_menu.render(game_context)
 
     return selected_dungeon
 
 def render_game(game_context: GameContextT):
+    """
+    Renders the main game screen (dungeon, characters, entities).
+
+    It retrieves the game state (dungeon, adventurer, dragons) from the context
+    and calls the respective render functions for each component.
+
+    Args:
+        game_context (GameContextT): The global game context.
+    """
     assets: AssetsT = game_context[GAME_CONTEXT_ASSETS]
 
     dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
@@ -57,6 +78,22 @@ def render_game(game_context: GameContextT):
 
 
 def render(game_context: GameContextT) -> GameEventDataT:
+    """
+    Main rendering dispatcher.
+
+    Switches between rendering the Start Menu or the Active Game based on the
+    current game state (`GAME_CONTEXT_GAME_STATE`).
+    
+    It also handles just-in-time initialization of game elements like dragons
+    when transitioning to the player turn.
+
+    Args:
+        game_context (GameContextT): The global game context.
+
+    Returns:
+        GameEventDataT: Any data resulting from the render step (e.g., selected dungeon),
+                        passed back to the event handler.
+    """
     game_state = game_context[GAME_CONTEXT_GAME_STATE]
 
     event_data: GameEventDataT = None
@@ -81,6 +118,17 @@ def render(game_context: GameContextT) -> GameEventDataT:
 
 
 def main_loop():
+    """
+    The main entry point and loop of the game application.
+
+    Responsibilities:
+    1. Initializes the window, assets, and global game context.
+    2. Runs the infinite game loop.
+    3. Captures FLTK events.
+    4. Calls the `render` pipeline.
+    5. Dispatches events to the `event_handler`.
+    6. Handles the exit condition (Escape key).
+    """
     # globals
     assets: AssetsT = list()
     current_dungeon: DungeonT = DungeonT()

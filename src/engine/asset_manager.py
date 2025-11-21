@@ -52,6 +52,21 @@ ASSETS_COUNT = 2
 BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
 
 def asset_manager_init() -> AssetsT:
+    """
+    Initializes the game asset manager by loading all necessary images from disk.
+
+    This function:
+    1. Defines the file names for blocks and characters.
+    2. Pre-allocates lists for blocks and characters based on defined counts.
+    3. Iterates through block types and their rotation states (suffix `_x.png`), loading them into `PhotoImage` objects.
+    4. Loads character images (knight, dragons).
+    5. Scales images to the configured sizes.
+
+    Returns:
+        AssetsT: A list structure organized by constants:
+                 - `assets[ASSETS_BLOCKS]`: A list of block images (each element is a list of rotations).
+                 - `assets[ASSETS_CHARACTERS]`: A list of character images.
+    """
     BLOCK_FILE_NAMES = ("block_solid.png", "block_single.png", "block_double_adjacent.png",
                         "block_double_opposite.png", "block_triple.png", "block_quad.png",
                         "wall_background.png")
@@ -85,6 +100,16 @@ def asset_manager_init() -> AssetsT:
     return assets
 
 def asset_manager_initialized(assets: AssetsT) -> bool:
+    """
+    Verifies if the asset manager structure has been correctly initialized.
+
+    Args:
+        assets (AssetsT): The asset structure to check.
+
+    Returns:
+        bool: True if the structure matches the expected format (correct number of asset categories
+              defined by `ASSETS_COUNT`, `BLOCK_COUNT`, and `CHARACTERS_COUNT`). False otherwise.
+    """
     # checks lenght of assets
     assets_count = len(assets)
     if assets_count != ASSETS_COUNT:
@@ -106,6 +131,20 @@ def asset_manager_initialized(assets: AssetsT) -> bool:
 
 # for block use a variable like BLOCK_
 def asset_manager_get_block(assets: AssetsT, block_idx: int, rotation_count: int) -> PhotoImage | NoneType:
+    """
+    Retrieves the image for a specific block type at a specific rotation.
+
+    Args:
+        assets (AssetsT): The initialized asset structure.
+        block_idx (int): The index of the block type (e.g., `BLOCK_SOLID`, `BLOCK_SINGLE`).
+        rotation_count (int): The number of 90-degree clockwise rotations.
+                              The function uses modulo arithmetic to map this to a valid image state.
+
+    Returns:
+        PhotoImage | NoneType: The tkinter PhotoImage object for the requested block,
+                               or None if the assets are not initialized, the index is out of bounds,
+                               or the block data is invalid.
+    """
     if not asset_manager_initialized(assets):
         return None
 

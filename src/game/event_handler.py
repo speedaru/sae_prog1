@@ -14,6 +14,17 @@ from src.utils.logging import *
 
 
 def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
+    """
+    Handles events occurring while in the Start Menu state.
+    
+    Specifically, it listens for a Left Click (KEY_X1) that carries a selected 
+    dungeon in its data payload. If a dungeon is selected, it updates the 
+    game context to transition to the playing state.
+
+    Args:
+        game_event (GameEventT): The event structure containing type and data.
+        game_context (GameContextT): The global game context to update.
+    """
     ev = game_event[GAME_EVENT_TYPE]
 
     
@@ -29,6 +40,18 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
         log_event_trace(f"seted dungeon: {game_context[GAME_CONTEXT_DUNGEON]}")
 
 def handle_normal_game_event(game_event: GameEventT, game_context: GameContextT):
+    """
+    Handles events occurring during the Player's Turn.
+    
+    Processes:
+    - Left Clicks: To rotate rooms in the dungeon.
+    - Keyboard 'R': To restart or debug (depends on implementation).
+    - Keyboard 'Space': To end turn.
+
+    Args:
+        game_event (GameEventT): The current game event.
+        game_context (GameContextT): The game context containing the dungeon.
+    """
     log_event_trace("game event !")
 
     ev = game_event[GAME_EVENT_TYPE]
@@ -62,6 +85,16 @@ def handle_normal_game_event(game_event: GameEventT, game_context: GameContextT)
         log_debug("'R' presse")
 
 def handle_event(game_event: GameEventT, game_context: GameContextT):
+    """
+    Main event dispatcher.
+    
+    Routes the event to the specific handler function based on the current
+    game state stored in `game_context`.
+
+    Args:
+        game_event (GameEventT): The event to handle.
+        game_context (GameContextT): The state of the game.
+    """
     game_state = game_context[GAME_CONTEXT_GAME_STATE]
 
     log_debug_full(f"game state: {game_state}")

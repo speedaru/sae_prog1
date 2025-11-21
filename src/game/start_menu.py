@@ -34,6 +34,18 @@ def _positions_init(positions: _PositionsT,
                    dungeon_name: str = "",
                    pos: tuple[int, int] = (0, 0),
                    size: tuple[int, int] = (0, 0)):
+    """
+    Initializes the position structure for a menu item.
+
+    This structure holds the metadata required to draw the menu item text
+    and detect clicks on it (bounding box calculation).
+
+    Args:
+        positions (_PositionsT): The list to initialize (modified in-place).
+        dungeon_name (str): The name of the dungeon file.
+        pos (tuple[int, int]): The (x, y) coordinates of the text.
+        size (tuple[int, int]): The (width, height) of the text.
+    """
     
     if len(positions) != _POSITIONS_COUNT:
         positions[:] = [None] * _POSITIONS_COUNT
@@ -44,15 +56,52 @@ def _positions_init(positions: _PositionsT,
 
 
 def _get_tl(position: _PositionsT) -> tuple[int, int]:
+    """
+    Gets the Top-Left coordinate of the menu item's bounding box.
+
+    Args:
+        position (_PositionsT): The initialized position structure.
+
+    Returns:
+        tuple[int, int]: The (x, y) coordinates.
+    """
     return position[_POSITIONS_POS]
 
 def _get_br(position: _PositionsT) -> tuple[int, int]:
+    """
+    Calculates the Bottom-Right coordinate of the menu item's bounding box.
+
+    This is derived from the position (Top-Left) and the size of the text.
+
+    Args:
+        position (_PositionsT): The initialized position structure.
+
+    Returns:
+        tuple[int, int]: The (x + width, y + height) coordinates.
+    """
     x, y = position[_POSITIONS_POS]
     w, h = position[_POSITIONS_SIZE]
     return (x + w, y + h)
 
 
 def render(game_context: GameContextT) -> DungeonT | NoneType: 
+    """
+    Renders the Start Menu interface and handles dungeon selection.
+
+    Process:
+    1. Scans the `dungeons/` directory for dungeon files.
+    2. Calculates the layout to center the dungeon names on the screen.
+    3. Draws the names using FLTK.
+    4. Checks for a Left Click event.
+    5. If a click occurs inside a dungeon name's bounding box, parses that dungeon file.
+
+    Args:
+        game_context (GameContextT): The global game context containing events.
+
+    Returns:
+        DungeonT | NoneType: The parsed Dungeon structure if a file was clicked,
+                             otherwise None.
+    """
     # récupération des fichiers de donjons
     path_dungeons = Path(DUNGEON_FILES_DIR)
 
