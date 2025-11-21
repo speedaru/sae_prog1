@@ -9,6 +9,7 @@ from src.engine.asset_manager import *
 # first int corresponds to block index (inside asset_manager)
 # second int corresponds to how many times we need to rotate it (clockwise)
 RoomT = list[int]
+RoomPosT = tuple[int, int] # room location in DungeonT
 RoomConnectionsT = tuple[bool, bool, bool, bool]
 DungeonT = list[list[RoomT]]
 

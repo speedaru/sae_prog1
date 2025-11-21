@@ -82,8 +82,6 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
 
         y += text_size[1] + PADDING_Y
 
-    fltk.mise_a_jour()
-
     # gestion du clic gauche
     ev: FltkEvent = game_context[GAME_CONTEXT_EVENT][GAME_EVENT_TYPE]
     if fltk.type_ev(ev) == KEY_X1:

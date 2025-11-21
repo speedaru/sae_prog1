@@ -1,14 +1,16 @@
+import time
 from tkinter import PhotoImage
 
 import libs.fltk as fltk
 from libs.fltk import FltkEvent
 
 from src.config import *
+from src.engine.engine_config import *
 from src.utils.logging import log_release, log_debug, log_debug_full
 
 import src.engine.engine_config as engine_config
+import src.engine.fps_manager as fps_manager
 from src.engine.asset_manager import *
-# import src.engine.fps_manager as fps_manager
 from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
@@ -42,7 +44,7 @@ def render_game(game_context: GameContextT):
 
     # render adventurer
     if adventurer != None:
-        log_debug_full(f"rendering adventurer: level: room_pos: {adventurer[ADVENTURER_ROOM_POS]} {adventurer[ADVENTURER_LEVEL]}")
+        log_debug_full(f"rendering adventurer: level: room_pos: {adventurer[ENTITY_ROOM_POS]} {adventurer[ENTITY_LEVEL]}")
         adventurer_render(adventurer, assets)
     else:
         log_error("cant render adventurer because adventurer is None")
@@ -64,7 +66,7 @@ def render(game_context: GameContextT) -> GameEventDataT:
     # if no dungeon selected then render the start_menu, otherwise render the dungeon
     if game_state == STATE_MENU_START:
         event_data = render_start_menu(game_context)
-    elif game_state == STATE_GAME_TURN_PLAYER:
+    elif game_state == STATE_GAME_TURN_PLAYER or game_state == STATE_GAME_TURN_DUNGEON:
         dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS] 
 
         # initialize dragons if none
@@ -77,10 +79,15 @@ def render(game_context: GameContextT) -> GameEventDataT:
 
         render_game(game_context)
 
+    # render game state info
+    game_state_render(game_context[GAME_CONTEXT_GAME_STATE])
+
     return event_data
 
 
 def main_loop():
+    last_update_time_s = time.time()
+
     # globals
     assets: AssetsT = list()
     current_dungeon: DungeonT = DungeonT()
@@ -112,24 +119,30 @@ def main_loop():
     game_context[GAME_CONTEXT_DRAGONS] = dragons
 
     while True:
+        # handle fps cap and delta time
+        ctime = time.time()
+        dt = fps_manager.calculate_delta_time(ctime, last_update_time_s)
+        last_update_time_s = ctime
+
         # get event
         event_type: FltkEvent | NoneType = fltk.donne_ev()
         game_event[GAME_EVENT_TYPE] = event_type
 
         # render
-        gui.start_render()
-
         # pass event to render function so it can send back event_data
+        gui.start_render()
         event_data: GameEventDataT = render(game_context)
-
         gui.render()
-
-        # exit game if exit key pressed
-        if fltk.touche_pressee(EXIT_KEY):
-            return
 
         # handle event only if there is event to handle
         if not isinstance(event_type, NoneType):
             game_event[GAME_EVENT_DATA] = event_data
 
             event_handler.handle_event(game_event, game_context)
+
+        # exit game
+        if game_context[GAME_CONTEXT_GAME_STATE] == STATE_EXIT:
+            break
+
+        fps_manager.sleep_to_cap_fps(dt)
+        # log_debug_full(f"fps: {fps_manager.calculate_fps(dt)}")
