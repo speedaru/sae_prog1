@@ -15,7 +15,7 @@ ENTITY_LEVEL = 1
 ENTITY_COUNT = 2
 
 
-def entity_init(entity: EntityT, level: int = 1, room_pos: list[int] = [0, 0]):
+def entity_init(entity: EntityT, level: int = 1, room_pos: list[int] = [0, 0], entity_size: int = ENTITY_COUNT):
     """
     Initializes a generic entity (like an adventurer or a dragon).
 
@@ -47,8 +47,8 @@ def entity_init(entity: EntityT, level: int = 1, room_pos: list[int] = [0, 0]):
     >>> e2
     [[0, 0], 1]
     """
-    if len(entity) != ENTITY_COUNT:
-        entity[:] = [None] * ENTITY_COUNT
+    if len(entity) != entity_size:
+        entity[:] = [None] * entity_size
 
     entity[ENTITY_LEVEL] = level
     entity[ENTITY_ROOM_POS] = room_pos

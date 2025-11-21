@@ -3,57 +3,47 @@ import time
 import src.engine.engine_config as engine_config
 
 
-def get_ctime_ms() -> float:
+def calculate_delta_time(current_time_s: float, last_update_time_s: float) -> float:
     """
-    Gets the current system time in milliseconds.
-
+    Calculates Delta Time (dt): the time elapsed since the last call 
+    to this function, and updates the internal tracking variable.
+    
     Returns:
-        float: The current time in milliseconds (converted from nanoseconds).
+        float: Delta time in seconds.
     """
-    ctime_ns = time.time_ns()
-    return ctime_ns / 1_000_000 # conversion NS -> MS
+    # Delta Time = Current Time - Time of Last Frame
+    delta_time_s = current_time_s - last_update_time_s
+    
+    return delta_time_s
 
-# returns target ms to sleep in order to run at TARGET_FPS
-def get_target_fps_interval_ms(target_fps: int):
+def calculate_fps(delta_time_s: float) -> int:
     """
-    Calculates the time interval required for one frame to reach the target FPS.
-
+    Calculates the current FPS based on the last calculated Delta Time.
+    
     Args:
-        target_fps (int): The desired frames per second.
-
+        delta_time_s (float): The delta time from the last frame.
+        
     Returns:
-        float: The duration of a single frame in milliseconds.
+        int: Frames per second.
     """
-    return (1 / target_fps) * 1000 # *1000 to get in ms
+    if delta_time_s == 0:
+        return 0
+    return round(1.0 / delta_time_s)
 
-def sleep_cap_fps(last_frame_start_ms: float):
+def sleep_to_cap_fps(delta_time_s: float):
     """
-    Pauses execution to cap the application's framerate.
-
-    Calculates the time elapsed since the start of the last frame and sleeps
-    if the frame completed faster than the target interval.
-
+    Calculates the required sleep duration to cap the frame rate
+    at the TARGET_FPS.
+    
     Args:
-        last_frame_start_ms (float): The timestamp (in ms) when the current frame started.
+        delta_time_s (float): The actual time taken to process the current frame 
+                              (logic and rendering).
     """
-    ctime_ms = get_ctime_ms()
-    diff_ms = ctime_ms - last_frame_start_ms
-    ms_to_sleep = diff_ms - get_target_fps_interval_ms(engine_config.TARGET_FPS)
+    
+    # Calculate how much time is left in the target frame budget
+    time_spent = delta_time_s
+    time_left_to_sleep = engine_config.TARGET_FRAME_TIME_S - time_spent
 
-    # only sleep if executing code too fast
-    if ms_to_sleep > 0:
-        time.sleep(ms_to_sleep / 1000) # convert to seconds
-
-def get_fps_count(last_frame_start_ms: float) -> int:
-    """
-    Calculates the current frames per second (FPS).
-
-    Args:
-        last_frame_start_ms (float): The timestamp (in ms) when the last frame started.
-
-    Returns:
-        int: The estimated FPS based on the time difference between now and the last frame.
-    """
-    # print(f"ctime: {get_ctime_ms()} | last_frame_start_ms: {last_frame_start_ms}")
-    return round(1000 / (get_ctime_ms() - last_frame_start_ms))
-
+    # Only sleep if we finished the work faster than the target time
+    if time_left_to_sleep > 0:
+        time.sleep(time_left_to_sleep)

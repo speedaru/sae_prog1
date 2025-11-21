@@ -1,19 +1,18 @@
 # engine stuff
-from src.engine.asset_manager import *
 from src.engine.structs.entity import *
+from src.engine.asset_manager import *
 
 # utils
 from src.utils.logging import *
 
 
 # types
-AdventurerT = list[list[int] | int | list[tuple[int, int]]]
+MovementPathT = list[RoomPosT]
+AdventurerT = list[RoomPosT | int | MovementPathT]
 
-# enum for adventurer structure
-ADVENTURER_ROOM_POS = 0
-ADVENTURER_LEVEL = 1
+# enum for adventurer structure that inherits from entity
 ADVENTURER_PATH = 2
-ADVENTURER_COUNT = 3
+ADVENTURER_COUNT = ENTITY_COUNT + 1
 
 
 def adventurer_init(adventurer: AdventurerT, level: int = 1, room_pos: list[int] = [0, 0]):
@@ -43,7 +42,7 @@ def adventurer_init(adventurer: AdventurerT, level: int = 1, room_pos: list[int]
     >>> adv_default
     [[0, 0], 1]
     """
-    entity_init(adventurer, level, room_pos)
+    entity_init(adventurer, level, room_pos, ADVENTURER_COUNT)
 
 def adventurer_render(adventurer: AdventurerT, assets: AssetsT):
     """
