@@ -10,7 +10,7 @@ from src.engine.asset_manager import *
 # second int corresponds to how many times we need to rotate it (clockwise)
 RoomT = list[int]
 RoomConnectionsT = tuple[bool, bool, bool, bool]
-DungeonT = list[list[RoomT]]
+DungeonT = list[list[RoomT]] # nxn matrix of rooms
 
 ROOM_BLOCK_ID = 0
 ROOM_ROTATION_COUNT = 1
@@ -19,7 +19,7 @@ ROOM_ROTATION_COUNT = 1
 # ---------- MANIPULATION FUNCTIONS ----------
 
 def dungeon_room_init() -> RoomT:
-    """
+    """src/engine/structs/dungeon.py
     Initializes an empty room structure.
 
     Returns:
