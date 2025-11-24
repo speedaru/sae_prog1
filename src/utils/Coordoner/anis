@@ -1,4 +1,0 @@
-def _rectangle_contains(px: int, py: int,
-                        tl: tuple[int, int],    # top-left
-                        br: tuple[int, int]) -> bool:
-    return tl[0] <= px <= br[0] and tl[1] <= py <= br[1]
