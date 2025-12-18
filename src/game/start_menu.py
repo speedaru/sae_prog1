@@ -12,7 +12,7 @@ from src.engine.parsing import *
 
 # config and game
 from src.config import DUNGEON_FILES_DIR
-from src.game.game_config import *
+from src.game.game_definitions import *
 from src.game.keys import *
 
 # utils
