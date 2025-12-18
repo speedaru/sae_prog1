@@ -3,7 +3,7 @@ from types import NoneType
 import libs.fltk as fltk
 from libs.fltk import FltkEvent
 
-from src.game.game_config import *
+from src.game.game_definitions import *
 
 import src.utils.fltk_extensions as fltk_ext
 

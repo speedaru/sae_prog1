@@ -1,7 +1,7 @@
 from types import NoneType
 from typing import Any
 
-from src.game.game_config import *
+from src.game.game_definitions import *
 from src.engine.structs.dungeon import *
 from src.engine.structs.entity import *
 from src.engine.structs.adventurer import *
@@ -9,15 +9,6 @@ from src.engine.structs.dragon import *
 
 import src.engine.game_logic as game_logic
 
-
-# entity enums
-ENTITY_UNKNOWN = 0xffff
-ENTITY_ADVENTURER = 0
-ENTITY_DRAGON = 1
-ENTITY_TREASURE = 2
-ENTITY_COUNT = 3
-
-ENTITY_CHARS = { "A": ENTITY_ADVENTURER, "D": ENTITY_DRAGON, "T": ENTITY_TREASURE }
 
 # dungeon rooms representations
 ROOM_REPR4 = ("╬")
@@ -29,16 +20,6 @@ ROOM_REPS = set().union(ROOM_REPR4, ROOM_REPR3, ROOM_REPR2_ADJ, ROOM_REPR2_OPP, 
 
 _EntityTypeValueT = tuple[int, Any]
 
-# dungeon, player, dragons, etc...
-GameDataT = list[DungeonT | EntitiesT]
-GAME_DATA_DUNGEON = 0
-GAME_DATA_ENTITIES = 1
-GAME_DATA_COUNT = 2
-
-def game_data_init() -> GameDataT:
-    game_data = [list() for _ in range(GAME_DATA_COUNT)]
-    entities_init(game_data[GAME_DATA_ENTITIES])
-    return game_data
 
 def dungeon_ascii_to_room(ascii_room: str) -> RoomT:
     """

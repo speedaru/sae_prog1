@@ -10,7 +10,7 @@ from src.engine.structs.dragon import *
 from src.engine.event_info import *
 from src.engine.parsing import *
 
-from src.game.game_config import *
+from src.game.game_definitions import *
 from src.game.state_manager import *
 from src.game.keys import *
 
@@ -42,6 +42,9 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
             return
 
         loaded_game: GameDataT = game_event[GAME_EVENT_DATA]
+        log_trace(f"loaded game, dungeon: {loaded_game[GAME_DATA_DUNGEON]=}")
+        log_trace(f"loaded game, adve: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]=}")
+        log_trace(f"loaded game, dragons: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS]=}")
         game_logic.load_dungeon(game_context, loaded_game[GAME_DATA_DUNGEON])
         game_logic.load_adventurer(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER])
         game_logic.load_dragons(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS])
@@ -63,8 +66,6 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
         game_context (GameContextT): The game context containing the dungeon.
     """
     log_trace("game event, player turn !")
-
-    dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
 
     event_info = event_get_info(game_event)
     if event_info[EVENT_INFO_TYPE] == None:
@@ -97,9 +98,10 @@ def handle_game_player_event(game_event: GameEventT, game_context: GameContextT)
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
         game_logic.do_dungeon_turn(game_context)
 
-        dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
-        dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS]
-        game_logic.move_dragons_randomly(dungeon, dragons)
+        dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
+        # dragons: list[DragonT] = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
+        entities: EntitiesT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES]
+        game_logic.move_dragons_randomly(dungeon, entities)
 
 def handle_game_finish(game_context: GameContextT):
     fltk.attend_ev()

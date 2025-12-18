@@ -4,7 +4,7 @@ import libs.fltk as fltk
 import src.utils.fltk_extensions as fltk_ext
 
 import src.engine.engine_config as engine_config
-import src.game.game_config as game_config
+import src.game.game_definitions as game_config
 
 from src.utils.logging import *
 
