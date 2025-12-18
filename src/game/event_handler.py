@@ -8,6 +8,7 @@ from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 from src.engine.event_info import *
+from src.engine.parsing import *
 
 from src.game.game_config import *
 from src.game.state_manager import *
@@ -16,19 +17,6 @@ from src.game.keys import *
 import src.utils.fltk_extensions as fltk_ext
 from src.utils.logging import *
 
-
-# -------------------- FUNCTIONS --------------------
-def handle_room_rotation(ev: FltkEvent, dungeon: DungeonT):
-    # rotate rooms
-    click_postion: tuple[int, int] = fltk_ext.position_souris(ev)
-
-    clicked_room = dungeon_get_room_from_pos(dungeon, click_postion)
-    if clicked_room == None:
-        log_debug("room selected is OOB")
-        return
-
-    # rotate room at click positons
-    dungeon_rotate_room(dungeon, clicked_room[0], clicked_room[1])
 
 
 # -------------------- GENERAL EVENT HANDLERS --------------------
@@ -53,9 +41,11 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
         if game_event[GAME_EVENT_DATA] == None:
             return
 
-        selected_dungeon: DungeonT = game_event[GAME_EVENT_DATA]
+        loaded_game: GameDataT = game_event[GAME_EVENT_DATA]
+        game_logic.load_dungeon(game_context, loaded_game[GAME_DATA_DUNGEON])
+        game_logic.load_adventurer(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER])
+        game_logic.load_dragons(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS])
 
-        game_logic.init_game_context(game_context, selected_dungeon)
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
 
 

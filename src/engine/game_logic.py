@@ -54,6 +54,18 @@ def reset_game_context(game_context: GameContextT):
     # set turn to dungeon
     game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
 
+def load_dungeon(game_context: GameContextT, dungeon: DungeonT):
+    game_context[GAME_CONTEXT_DUNGEON] = dungeon
+    game_context[GAME_CONTEXT_ORIGINAL_DUNGEON][:] = game_context[GAME_CONTEXT_DUNGEON]
+
+def load_adventurer(game_context: GameContextT, adventurer: AdventurerT):
+    game_context[GAME_CONTEXT_ADVENTURER] = adventurer
+    game_context[GAME_CONTEXT_ORIGINAL_ADVENTURER][:] = deepcopy(game_context[GAME_CONTEXT_ADVENTURER])
+
+def load_dragons(game_context: GameContextT, dragons: list[DragonT]):
+    game_context[GAME_CONTEXT_DRAGONS] = dragons
+    game_context[GAME_CONTEXT_ORIGINAL_DRAGONS][:] = deepcopy(game_context[GAME_CONTEXT_DRAGONS])
+
 def rotate_room(event_info: EventInfoT, game_context: GameContextT):
     ev: FltkEvent = event_info[EVENT_INFO_EV]
     click_postion = fltk_ext.position_souris(ev)

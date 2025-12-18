@@ -89,15 +89,10 @@ def dragon_create_dragons(dragons: list[DragonT], dungeon_size: DungeonSizeT, co
         d = DragonT()
 
         # put dragon in random room
-        random_col = randrange(0, dungeon_size[DUNGEON_SIZE_COL])
-        random_row = randrange(0, dungeon_size[DUNGEON_SIZE_ROW])
-
-        # create room depending on room pos representation
-        random_room = (0, 0)
-        if ROOM_POS_COL == 0 and ROOM_POS_ROW == 1:
-            random_room: RoomPosT = (random_col, random_row)
-        elif ROOM_POS_ROW == 0 and ROOM_POS_COL == 1:
-            random_room: RoomPosT = (random_row, random_col)
+        # but start at 1 so it doesnt spawn on adventurer
+        random_col = randrange(1, dungeon_size[DUNGEON_SIZE_COL])
+        random_row = randrange(1, dungeon_size[DUNGEON_SIZE_ROW])
+        random_room = room_pos_create(col=random_col, row=random_row)
 
         dragon_init(d, room_pos=random_room, level=(i + 1))
         dragons.append(d)
