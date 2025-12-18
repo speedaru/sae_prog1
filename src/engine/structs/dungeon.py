@@ -8,14 +8,12 @@ from src.engine.asset_manager import *
 
 # first int corresponds to block index (inside asset_manager)
 # second int corresponds to how many times we need to rotate it (clockwise)
-RoomT = list[int]
-
+RoomT = tuple[int, int]
 ROOM_BLOCK_ID = 0
 ROOM_ROTATION_COUNT = 1
+ROOM_COUNT = 2
 
-RoomPosT = tuple[int, int]
-ROOM_POS_COL = 0
-ROOM_POS_ROW = 1
+DungeonT = list[list[RoomT]] # n x n matrix of rooms
 
 RoomConnectionsT = tuple[bool, bool, bool, bool]
 ROOM_CONNECTION_UP = 0
@@ -23,7 +21,10 @@ ROOM_CONNECTION_RIGHT = 1
 ROOM_CONNECTION_DOWN = 2
 ROOM_CONNECTION_LEFT = 3
 
-DungeonT = list[list[RoomT]] # nxn matrix of rooms
+RoomPosT = tuple[int, int]
+ROOM_POS_COL = 0
+ROOM_POS_ROW = 1
+ROOM_POS_COUNT = 2
 
 DungeonSizeT = RoomPosT # alias cuz also cols x rows
 DUNGEON_SIZE_COL = ROOM_POS_COL
@@ -38,21 +39,19 @@ def room_pos_create(col: int, row: int) -> RoomPosT:
     Doctest:
     >>> ROOM_POS_COL = 0
     >>> ROOM_POS_ROW = 1
-    >>> create_room_pos(1, 0)
-    (1, 0)
-    >>> ROOM_POS_ROW = 0
-    >>> ROOM_POS_COL = 1
-    >>> create_room_pos(1, 0)
-    (0, 1)
+    >>> room_pos_create(col=5, row=6)
+    (5, 6)
     """
-    if ROOM_POS_COL == 0 and ROOM_POS_ROW == 1:
-        return (col, row)
-    elif ROOM_POS_ROW == 1 and ROOM_POS_COL == 0:
-        return (row, col)
+    room_pos = [0] * ROOM_POS_COUNT
+    room_pos[ROOM_POS_COL] = col
+    room_pos[ROOM_POS_ROW] = row
 
-    return (-1, -1)
+    return RoomPosT(room_pos)
 
-def dungeon_room_init() -> RoomT:
+def dugeon_size_create(cols: int, rows: int):
+    return room_pos_create(col=cols, row=rows)
+
+def dungeon_room_create(block_id: int = 0, rotation_count: int = 0) -> RoomT:
     """src/engine/structs/dungeon.py
     Initializes an empty room structure.
 
@@ -61,10 +60,14 @@ def dungeon_room_init() -> RoomT:
 
     Doctest :
 
-    >>> dungeon_room_init()
-    [0, 0]
+    >>> dungeon_room_create()
+    (0, 0)
     """
-    return [0, 0]
+    room = [0] * ROOM_COUNT
+    room[ROOM_BLOCK_ID] = block_id
+    room[ROOM_ROTATION_COUNT] = rotation_count
+
+    return RoomT(room)
 
 # initalizes dungeon in ``dungeon`` bcs its passed by reference
 def dungeon_init(dungeon: DungeonT, rows: int, cols: int) -> NoneType:
@@ -79,7 +82,6 @@ def dungeon_init(dungeon: DungeonT, rows: int, cols: int) -> NoneType:
         cols (int): Number of columns.
     
     Doctest :
-
     >>> d = []
     >>> dungeon_init(d, 2, 3)
     >>> # Check dimensions (2 rows, 3 cols)
@@ -89,13 +91,13 @@ def dungeon_init(dungeon: DungeonT, rows: int, cols: int) -> NoneType:
     3
     >>> # Check first room content
     >>> d[0][0]
-    [0, 0]
+    (0, 0)
     """
     dungeon.clear()
 
     # init each line with col amount of empty rooms
     for _ in range(rows):
-        dungeon.append([dungeon_room_init()] * cols)
+        dungeon.append([dungeon_room_create()] * cols)
 
 def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
     """
@@ -129,25 +131,25 @@ def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
     DOOR_COUNT = 4
 
     # init room connections that we will change and convert to tuple at end
-    room_connections: list[bool] = [False] * DOOR_COUNT
+    room_connections: RoomConnectionsT = RoomConnectionsT()
 
     # check if room is invalid
     if room[ROOM_BLOCK_ID] >= BLOCK_COUNT:
-        return tuple(room_connections) # invalid room_id
+        return room_connections # invalid room_id
 
     # get room basic door setup
     room_id = room[ROOM_BLOCK_ID]
 
     if room_id == BLOCK_SINGLE:
-        room_connections = [True, False, False, False]
+        room_connections = (True, False, False, False)
     elif room_id == BLOCK_DOUBLE_ADJACENT:
-        room_connections = [True, True, False, False]
+        room_connections = (True, True, False, False)
     elif room_id == BLOCK_DOUBLE_OPPOSITE:
-        room_connections = [True, False, True, False]
+        room_connections = (True, False, True, False)
     elif room_id == BLOCK_TRIPLE:
-        room_connections = [True, True, True, False]
+        room_connections = (True, True, True, False)
     elif room_id == BLOCK_QUAD:
-        room_connections = [True, True, True, True]
+        room_connections = (True, True, True, True)
 
     # rotate room
     room_rotations = room[ROOM_ROTATION_COUNT]
@@ -158,7 +160,7 @@ def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
         rotated_i = (i + room_rotations) % DOOR_COUNT
         rotated_room_connections[rotated_i] = room_connections[i]
 
-    return tuple(rotated_room_connections)
+    return RoomConnectionsT(rotated_room_connections)
 
 def dungeon_get_room_distance(room1: RoomPosT, room2: RoomPosT) -> int:
     """
@@ -175,10 +177,10 @@ def dungeon_get_room_distance(room1: RoomPosT, room2: RoomPosT) -> int:
         return None
 
     # dx is col difference dy is row difference
-    dx = abs(room1[0] - room2[0])
-    dy = abs(room1[1] - room2[1])
+    dx = abs(room1[ROOM_POS_COL] - room2[ROOM_POS_COL])
+    dy = abs(room1[ROOM_POS_ROW] - room2[ROOM_POS_ROW])
 
-    # return sum
+    # return sum of delta
     return dx + dy
 
 def dungeon_rooms_connected(room1: RoomT, room1_pos: RoomPosT, room2: RoomT, room2_pos: RoomPosT):
@@ -236,8 +238,8 @@ def dungeon_rooms_connected(room1: RoomT, room1_pos: RoomPosT, room2: RoomT, roo
 
     # calculate relative position
     # dx = col difference, dy = row difference
-    dx = room2_pos[0] - room1_pos[0]
-    dy = room2_pos[1] - room1_pos[1]
+    dx = room2_pos[ROOM_POS_COL] - room1_pos[ROOM_POS_COL]
+    dy = room2_pos[ROOM_POS_ROW] - room1_pos[ROOM_POS_ROW]
 
     # check aligned doors based on rel pos
     if dy == 1 and dx == 0:
@@ -350,13 +352,13 @@ def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:
     >>> dungeon_init(d, 1, 1)
     >>> # Initial state: rotation 0
     >>> d[0][0]
-    [0, 0]
+    (0, 0)
     >>> # Rotate room at (0, 0)
     >>> dungeon_rotate_room(d, 0, 0)
     True
     >>> # New state: rotation 1
     >>> d[0][0]
-    [0, 1]
+    (0, 1)
     >>> # Try to rotate out of bounds
     >>> dungeon_rotate_room(d, 5, 5)
     False
@@ -365,8 +367,8 @@ def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:
     if not dungeon_room_pos_in_bounds(dungeon, room_pos_create(col=col, row=row)):
         return False
 
-    dungeon[row][col][ROOM_ROTATION_COUNT] += 1
-
+    room: RoomT = dungeon[row][col]
+    dungeon[row][col] = dungeon_room_create(room[ROOM_BLOCK_ID], room[ROOM_ROTATION_COUNT] + 1)
     return True
 
 # returns number of rooms horizontally
@@ -405,83 +407,6 @@ def dungeon_get_height(dungeon: DungeonT) -> int:
     0
     """
     return len(dungeon)
-
-# ---------- PARSING ----------
-
-def dungeon_ascii_to_room(ascii_room: str) -> RoomT:
-    """
-    Converts an ASCII character from a dungeon file into a Room structure.
-
-    Args:
-        ascii_room (str): The character representing the room (e.g., '╬', '╠').
-
-    Returns:
-        RoomT: The corresponding room structure [BlockID, RotationCount].
-    """
-    REPR4 = ("╬")
-    REPR3 = ("╠", "╦", "╣", "╩")
-    REPR2_ADJ = ("╚", "╔", "╗", "╝")
-    REPR2_OPP = ("║", "═")
-    REPR1 = ("╨", "╞", "╥","╡")
-
-    ROOM = [0, 0]
-
-    log_debug_full(f"[dungeon_ascii_to_room] ascii room: {ascii_room}")
-
-    if ascii_room in REPR4:
-        ROOM = [BLOCK_QUAD, 0]
-    elif ascii_room in REPR3:
-        ROOM = [BLOCK_TRIPLE, REPR3.index(ascii_room)]
-    elif ascii_room in REPR2_ADJ:
-        ROOM = [BLOCK_DOUBLE_ADJACENT, REPR2_ADJ.index(ascii_room)]
-    elif ascii_room in REPR2_OPP:
-        ROOM = [BLOCK_DOUBLE_OPPOSITE, REPR2_OPP.index(ascii_room)]
-    elif ascii_room in REPR1:
-        ROOM = [BLOCK_SINGLE, REPR1.index(ascii_room)]
-
-    return ROOM
-
-# returns True if successfuly parsed file
-def dungeon_parse_file(dungeon: DungeonT, dungeon_file_path: str) -> bool:
-    """
-    Parses a dungeon layout from a text file and populates the dungeon structure.
-    """
-    # read file
-    file_data: str = read_utf8_file(dungeon_file_path)
-    if file_data == "":
-        log_release(f"[dungeon] failed to read {dungeon_file_path}")
-        return False
-
-    # get dungeon rows
-    row_list = file_data.split("\n")
-
-    # ensure number of rows is not 0
-    rows = len(row_list)
-    if rows == 0:
-        log_release("[dungeon] invalid row count in dungeon: '{dungeon_file_path}'")
-        return False
-
-    # ensure each row is same size
-    cols = len(row_list[0])
-    for col_list in row_list:
-        curr_cols = len(col_list)
-        if curr_cols != cols:
-            log_release("[dungeon] inconsistent column count ({cols} and {curr_cols}) in dungeon: '{dungeon_file_path}'")
-            return False
-
-    log_debug(f"[dungeon] rows, cols: ({rows}, {cols})")
-    
-    # init dungeon with empty values so we can index rows and cols without oob error
-    dungeon_init(dungeon, rows, cols)
-    log_debug("[dungeon] initialized empty dungeon")
-
-    # parse each room and fill the dungeon
-    for i, row in enumerate(row_list):
-        for j, col in enumerate(row):
-            dungeon[i][j] = dungeon_ascii_to_room(col)
-            log_debug(f"[dungeon] set dungeon room to {dungeon[i][j]}")
-
-    return True
 
 def dungeon_print_values(dungeon: DungeonT):
     """

@@ -7,7 +7,8 @@ from pathlib import Path
 import libs.fltk as fltk
 
 # engine
-from src.engine.structs.dungeon import DungeonT, dungeon_parse_file
+from src.engine.structs.dungeon import DungeonT
+from src.engine.parsing import *
 
 # config and game
 from src.config import DUNGEON_FILES_DIR
@@ -85,7 +86,7 @@ def _get_br(position: _PositionsT) -> tuple[int, int]:
     return (x + w, y + h)
 
 
-def render(game_context: GameContextT) -> DungeonT | NoneType: 
+def render(game_context: GameContextT) -> GameDataT | NoneType: 
     """
     Renders the Start Menu interface and handles dungeon selection.
 
@@ -100,7 +101,7 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
         game_context (GameContextT): The global game context containing events.
 
     Returns:
-        DungeonT | NoneType: The parsed Dungeon structure if a file was clicked,
+        GameDataT | NoneType: The parsed GameDataT structure (dungeon, adventure, dragons) if a file was clicked,
                              otherwise None.
     """
     # background
@@ -118,7 +119,7 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
 
     # displaying centered names
     x = fltk.largeur_fenetre() / 2
-    y = fltk.hauteur_fenetre() / 2 - 150
+    y: int = fltk.hauteur_fenetre() // 2 - 150
 
     PADDING_Y = 35
     positions: list[_PositionsT] = []  # to store positions
@@ -127,11 +128,11 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
         text = dungeon_name[:-4]  # remove ".txt"
         text_size = fltk.taille_texte(text)
 
-        center_x = x - (text_size[0] / 2)
+        center_x: int = x - (text_size[0] / 2)
         fltk.texte(center_x, y, text, couleur="white")
 
         # create and initialize the complete structure
-        pos_struct: _PositionsT = [None] * _POSITIONS_COUNT
+        pos_struct: _PositionsT = _PositionsT() * _POSITIONS_COUNT
         _positions_init(pos_struct, dungeon_name=dungeon_name, pos=(center_x, y), size=text_size)
         positions.append(pos_struct)
 
@@ -147,10 +148,11 @@ def render(game_context: GameContextT) -> DungeonT | NoneType:
             tl = _get_tl(position)
             br = _get_br(position)
             if in_rectangle(click_pos, tl, br):
-                dungeon = DungeonT()
-                dungeon_file_path = os.path.join(DUNGEON_FILES_DIR, position[_POSITIONS_DUNGEON])
-                dungeon_parse_file (dungeon,dungeon_file_path)
-                return dungeon
+                game_file_path = os.path.join(DUNGEON_FILES_DIR, str(position[_POSITIONS_DUNGEON]))
+                parsed_game_data: GameDataT = game_data_init()
+                parsed_successfuly = game_data_parse_file(parsed_game_data, game_file_path)
+                if parsed_successfuly:
+                    return parsed_game_data
 
     return None
 

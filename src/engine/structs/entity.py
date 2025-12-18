@@ -14,6 +14,14 @@ ENTITY_ROOM_POS = 0
 ENTITY_LEVEL = 1
 ENTITY_COUNT = 2
 
+EntitiesT = list[EntityT | list[EntityT]]
+ENTITIES_ADVENTURER = 0
+ENTITIES_DRAGONS = 1
+ENTITIES_TREASURE = 2
+ENTITIES_COUNT = 3
+
+def entities_init(entities: EntitiesT):
+    entities[:] = [list() for _ in range(ENTITIES_COUNT)]
 
 def entity_init(entity: EntityT, level: int = 1, room_pos: RoomPosT = (0, 0), entity_size: int = ENTITY_COUNT):
     """

@@ -64,3 +64,6 @@ GAME_CONTEXT_COUNT = 9
 GAME_EVENT_TYPE = 0 # event type, FltkEvent
 GAME_EVENT_DATA = 1 # event data
 GAME_EVENT_COUNT = 2
+
+def game_context_init() -> GameContextT:
+    return [[None] for _ in range(GAME_CONTEXT_COUNT)]
