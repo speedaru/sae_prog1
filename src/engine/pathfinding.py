@@ -1,39 +1,44 @@
-
 from src.engine.structs.entity import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 from src.engine.structs.dungeon import *
 
 
-def find_closest_dragon(adventurer: AdventurerT, dragons: list[DragonT]) -> DragonT | None:
+# def find_closest_dragon(adventurer: AdventurerT, dragons: list[DragonT]) -> DragonT | None:
+#     """
+#     Finds the closest dragon.
+#     In case of distance tie, chooses the highest level.
+#     """
+#     if not dragons:
+#         return None
+#         
+#     adv_pos = adventurer[ENTITY_ROOM_POS]
+#     
+#     # Initialization with the first dragon
+#     closest_dragon = dragons[0]
+#     min_dist = dungeon_get_room_distance(adv_pos, closest_dragon[ENTITY_ROOM_POS])
+#     
+#     # Iterate through other dragons with a simple for loop 
+#     for i in range(1, len(dragons)):
+#         dragon = dragons[i]
+#         dist = dungeon_get_room_distance(adv_pos, dragon[ENTITY_ROOM_POS])
+#         
+#         # If a closer dragon is found
+#         if dist < min_dist:
+#             min_dist = dist
+#             closest_dragon = dragon
+#         # If distance is equal, prioritize the highest level
+#         elif dist == min_dist:
+#             if dragon[ENTITY_LEVEL] > closest_dragon[ENTITY_LEVEL]:
+#                 closest_dragon = dragon
+#                 
+#     return closest_dragon
+
+def find_meanest_dragon(dragons: list[DragonT]) -> RoomPosT:
     """
-    Finds the closest dragon.
-    In case of distance tie, chooses the highest level.
+    returns: RoomPosT of dragon with the highest level
     """
-    if not dragons:
-        return None
-        
-    adv_pos = adventurer[ENTITY_ROOM_POS]
-    
-    # Initialization with the first dragon
-    closest_dragon = dragons[0]
-    min_dist = dungeon_get_room_distance(adv_pos, closest_dragon[ENTITY_ROOM_POS])
-    
-    # Iterate through other dragons with a simple for loop 
-    for i in range(1, len(dragons)):
-        dragon = dragons[i]
-        dist = dungeon_get_room_distance(adv_pos, dragon[ENTITY_ROOM_POS])
-        
-        # If a closer dragon is found
-        if dist < min_dist:
-            min_dist = dist
-            closest_dragon = dragon
-        # If distance is equal, prioritize the highest level
-        elif dist == min_dist:
-            if dragon[ENTITY_LEVEL] > closest_dragon[ENTITY_LEVEL]:
-                closest_dragon = dragon
-                
-    return closest_dragon
+    return RoomPosT()
 
 def find_path(dungeon: DungeonT, start_room: RoomPosT, target_room: RoomPosT) -> MovementPathT:
     """
@@ -76,7 +81,8 @@ def is_valid_path(dungeon: DungeonT, start_pos: RoomPosT, path: MovementPathT) -
 
 def find_and_set_adventurer_path(dungeon: DungeonT, adventurer: AdventurerT, dragons: list[DragonT]):
     # Finds the target dragon and calculates the path to it.
-    target_dragon = find_closest_dragon(adventurer, dragons)
+    # target_dragon = find_closest_dragon(adventurer, dragons)
+    target_dragon = find_meanest_dragon(dragons)
     
     # If a target is found, calculate the path
     if target_dragon != None:
