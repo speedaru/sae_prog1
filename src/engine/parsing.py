@@ -12,6 +12,8 @@ from src.engine.structs.entity import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 
+from src.utils.file_utils import path_exists
+
 
 # dungeon rooms representations
 ROOM_REPR4 = ("╬")
@@ -267,6 +269,10 @@ def load_saved_game(game_context):
     """
     reaload game context from file
     """
+    # if save file doesnt exist do nothing
+    if not path_exists(GAME_SAVE_FILE_PATH):
+        return
+
     serialized_data = ""
 
     with open(GAME_SAVE_FILE_PATH, "r") as f:

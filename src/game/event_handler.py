@@ -96,7 +96,13 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
         game_logic.rotate_room(event_info, game_context)
     # player finish turn
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
-        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_PLAYER
+        # execute dungeon turn
+        game_logic.do_dungeon_turn(game_context)
+
+        # move dragons
+        dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
+        entities: EntitiesT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES]
+        game_logic.move_dragons_randomly(dungeon, entities)
     # place treasure
     elif event_info[EVENT_INFO_TYPE] == KEY_X2:
         treasure_count = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT]
@@ -128,12 +134,7 @@ def handle_game_player_event(game_event: GameEventT, game_context: GameContextT)
         pass
     # finish dungeon turn
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
-        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
-        game_logic.do_dungeon_turn(game_context)
-
-        dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
-        entities: EntitiesT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES]
-        game_logic.move_dragons_randomly(dungeon, entities)
+        pass
 
 def handle_game_finish(game_context: GameContextT):
     fltk.attend_ev()
