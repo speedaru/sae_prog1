@@ -8,6 +8,7 @@ from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 from src.engine.event_info import *
+from src.engine.pathfinding import *
 
 from src.game.game_config import *
 from src.game.state_manager import *
@@ -97,14 +98,25 @@ def handle_game_player_event(game_event: GameEventT, game_context: GameContextT)
         return None
 
     # draw player movement manually
-    if event_info[EVENT_INFO_TYPE] == KEY_X1:
-        game_logic.manually_update_player_path(event_info, game_context)
+    if event_info[EVENT_INFO_TYPE] == KEY_X1: 
+        # game_logic.manually_update_player_path(event_info, game_context)
+        pass
     # restart dungeon
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
         game_logic.reset_game_context(game_context)
     # finish dungeon turn
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+        
+        # update path
+        
+        
+        adventurer = game_context[GAME_CONTEXT_ADVENTURER]
+        dragons = game_context[GAME_CONTEXT_DRAGONS]
+
+        find_and_set_adventurer_path(adventurer, dragons)    
+
+
         game_logic.do_dungeon_turn(game_context)
 
         dungeon: DungeonT = game_context[GAME_CONTEXT_DUNGEON]
@@ -143,3 +155,35 @@ def handle_event(game_event: GameEventT, game_context: GameContextT):
         handle_game_dungeon_event(game_event, game_context)
     elif game_state == STATE_GAME_DONE_LOST or game_state == STATE_GAME_DONE_WON:
         handle_game_finish(game_context)
+
+        #ANIS
+    
+def handle_game_player_event(game_event: GameEventT, game_context: GameContextT):
+    event_info = event_get_info(game_event)
+    if event_info[EVENT_INFO_TYPE] == None:
+        return None
+    
+    dungeon = game_context[GAME_CONTEXT_DUNGEON]
+    adventurer = game_context[GAME_CONTEXT_ADVENTURER]
+    dragons = game_context[GAME_CONTEXT_DRAGONS]
+
+    # Gestion du dessin manuel 
+    if event_info[EVENT_INFO_TYPE] == KEY_X1:
+        game_logic.manually_update_player_path(event_info, game_context)
+        
+    # Touche R : Recommencer
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
+        game_logic.reset_game_context(game_context)
+        
+    # Touche Espace : Fin du tour du joueur
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
+        # On passe 'dungeon' en premier argument
+        from src.engine.pathfinding import find_and_set_adventurer_path
+        find_and_set_adventurer_path(dungeon, adventurer, dragons)
+        # ----------------------
+        
+        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+        game_logic.do_dungeon_turn(game_context)
+
+        # Déplacement des dragons après le tour
+        game_logic.move_dragons_randomly(dungeon, dragons)
