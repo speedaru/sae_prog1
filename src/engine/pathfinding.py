@@ -34,11 +34,11 @@ from src.engine.structs.dungeon import *
 #                 
 #     return closest_dragon
 
-def find_meanest_dragon(dragons: list[DragonT]) -> RoomPosT:
+def find_meanest_dragon(dragons: list[DragonT]) -> DragonT:
     """
-    returns: RoomPosT of dragon with the highest level
+    returns: DragonT dragon with the highest level
     """
-    return RoomPosT()
+    return dragons[0]
 
 def find_path(dungeon: DungeonT, start_room: RoomPosT, target_room: RoomPosT) -> MovementPathT:
     """
