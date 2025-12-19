@@ -114,6 +114,10 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
 
     dungeon_files = []
     for f in os.listdir(path_dungeons):
+        # exclude files that start with $ bcs its save file
+        if f.startswith("$"):
+            continue
+
         if os.path.isfile(os.path.join(path_dungeons, f)):
             dungeon_files.append(f)
 

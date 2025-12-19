@@ -15,3 +15,5 @@ assets/logo/
 *.ps1
 
 libs/fltk_custom.py
+
+dungeons/$*

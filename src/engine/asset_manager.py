@@ -20,6 +20,7 @@ BLOCK_SCALE = 2
 BLOCK_SCALED_SIZE = (BLOCK_SIZE[0] * BLOCK_SCALE, BLOCK_SIZE[1] * BLOCK_SCALE)
 
 CHARACTERS_SIZES = (64, 64)
+TREASURE_SIZES = (48, 48)
 
 # types
 BlockT = list[PhotoImage]
@@ -43,10 +44,18 @@ CHARACTERS_ADVENTURER = 0
 CHARACTERS_DRAGONS = 1
 CHARACTERS_COUNT = 2
 
+TREASURES_IMAGE1 = 0
+TREASURES_IMAGE2 = 1
+TREASURES_IMAGE3 = 2
+TREASURES_IMAGE4 = 3
+TREASURES_IMAGE5 = 4
+TREASURES_IMAGE_COUNT = 5
+
 # enum for assets list
 ASSETS_BLOCKS = 0
 ASSETS_CHARACTERS = 1
-ASSETS_COUNT = 2
+ASSETS_TREASURES = 2
+ASSETS_COUNT = 3
 
 # max rotations for each block image in order
 BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
@@ -76,7 +85,8 @@ def asset_manager_init() -> AssetsT:
     # reserve space so we can use index directly instead of using append()
     blocks = [[PhotoImage()] * states_count for states_count in BLOCK_MAX_ROTATIONS]
     characters = [PhotoImage()] * CHARACTERS_COUNT # knight and dragons
-    assets: AssetsT = [list()] * ASSETS_COUNT # blocks and characters
+    treasures = [PhotoImage()] * TREASURES_IMAGE_COUNT
+    assets: AssetsT = [list()] * ASSETS_COUNT # all assets
 
     # load blocks
     for block_id, asset_file_name in enumerate(BLOCK_FILE_NAMES):
@@ -92,10 +102,18 @@ def asset_manager_init() -> AssetsT:
     # load characters
     for character in range(CHARACTERS_COUNT):
         image = os.path.join(ASSETS_DIR, CHARARCTERS_FILE_NAMES[character])
-        characters[character] = fltk._load_tk_image(image, CHARACTERS_SIZES[0], CHARACTERS_SIZES[0])
+        characters[character] = fltk._load_tk_image(image, CHARACTERS_SIZES[0], CHARACTERS_SIZES[1])
 
+    # load treasure images
+    TREASURE_FILE_NAMES = tuple([f"treasure{i}.png" for i in range(1, TREASURES_IMAGE_COUNT + 1)])
+    for treasure in range(len(TREASURE_FILE_NAMES)):
+        image = os.path.join(ASSETS_DIR, TREASURE_FILE_NAMES[treasure])
+        treasures[treasure] = fltk._load_tk_image(image, TREASURE_SIZES[0], TREASURE_SIZES[1])
+
+    # set assets
     assets[ASSETS_BLOCKS] = blocks
     assets[ASSETS_CHARACTERS] = characters
+    assets[ASSETS_TREASURES] = treasures
 
     return assets
 

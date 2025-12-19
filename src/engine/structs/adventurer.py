@@ -76,4 +76,3 @@ def adventurer_render_path(adventurer: AdventurerT):
         end_x, end_y = geom.get_room_center_screen_pos(room_pos)
         fltk.ligne(start_x, start_y, end_x, end_y, couleur=PATH_LINE_COLOR, epaisseur=PATH_LINE_THICKNESS)
         start_x, start_y = end_x, end_y
-
