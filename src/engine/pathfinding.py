@@ -6,6 +6,8 @@ from src.engine.structs.treasure import *
 
 from src.game.game_definitions import *
 
+from src.utils.entity_utils import *
+
 
 # def find_closest_dragon(adventurer: AdventurerT, dragons: list[DragonT]) -> DragonT | None:
 #     """
@@ -36,8 +38,6 @@ from src.game.game_definitions import *
 #                 closest_dragon = dragon
 #                 
 #     return closest_dragon
-
-
 
 def find_path(dungeon: DungeonT, start_room: RoomPosT, target_room: RoomPosT) -> MovementPathT:
     """
@@ -98,6 +98,22 @@ def find_meanest_dragon(dungeon: DungeonT, adventurer: AdventurerT, dragons: lis
             
     return meanest_dragon
 
+def path_stop_at_collision(entities: EntitiesT, path: MovementPathT) -> MovementPathT:
+    """
+    returns: path stopped after first collisions with entity
+    """
+    entities_positions: set = get_entities_positions(entities)
+
+    new_path = []
+    for room_pos in path:
+        new_path.append(room_pos)
+
+        # if entity somewhere on path, then stop path there
+        if room_pos in entities_positions:
+            return new_path
+
+    return new_path
+
 def find_and_set_adventurer_path(game_data: GameDataT):
     dungeon = game_data[GAME_DATA_DUNGEON]
     adventurer = game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
@@ -106,18 +122,22 @@ def find_and_set_adventurer_path(game_data: GameDataT):
 
     target_room = None
 
+    # if treasure is in dungeon and accesible, then go to treasure
     if treasure_is_valid(treasure) and room_is_accessible(dungeon, adventurer, treasure[ENTITY_ROOM_POS]):
         target_room = treasure[ENTITY_ROOM_POS]
+    # otherwise go to dragon
     else : 
-        
-        # Finds the target dragon and calculates the path to it.
-        # target_dragon = find_closest_dragon(adventurer, dragons)
         target_dragon = find_meanest_dragon(dungeon, adventurer, dragons)
         target_room = target_dragon[ENTITY_ROOM_POS]    
         
     # If a target is found, calculate the path
     if target_room != None:
         path = find_path(dungeon, adventurer[ENTITY_ROOM_POS], target_room)
+
+        # if another entity on path, stop path there
+        path = path_stop_at_collision(game_data[GAME_DATA_ENTITIES], path)
+
+        # set new calculated path in adventurer
         if path:
             adventurer[ADVENTURER_PATH] = path
             return 
