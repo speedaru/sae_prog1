@@ -34,3 +34,5 @@ def do_adventurer_path(adventurer: AdventurerT):
 
     adventurer[ENTITY_ROOM_POS] = movement_path[-1]
 
+def pullrequest () :
+    pass
