@@ -2,6 +2,9 @@ from src.engine.structs.entity import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 from src.engine.structs.dungeon import *
+from src.engine.structs.treasure import *
+
+from src.game.game_definitions import *
 
 
 # def find_closest_dragon(adventurer: AdventurerT, dragons: list[DragonT]) -> DragonT | None:
@@ -34,11 +37,7 @@ from src.engine.structs.dungeon import *
 #                 
 #     return closest_dragon
 
-def find_meanest_dragon(dragons: list[DragonT]) -> DragonT:
-    """
-    returns: DragonT dragon with the highest level
-    """
-    return dragons[0]
+
 
 def find_path(dungeon: DungeonT, start_room: RoomPosT, target_room: RoomPosT) -> MovementPathT:
     """
@@ -79,17 +78,49 @@ def is_valid_path(dungeon: DungeonT, start_pos: RoomPosT, path: MovementPathT) -
         current = step
     return True
 
-def find_and_set_adventurer_path(dungeon: DungeonT, adventurer: AdventurerT, dragons: list[DragonT]):
-    # Finds the target dragon and calculates the path to it.
-    # target_dragon = find_closest_dragon(adventurer, dragons)
-    target_dragon = find_meanest_dragon(dragons)
-    
+def room_is_accessible(dungeon: DungeonT, adventurer: AdventurerT, target_room: RoomPosT):
+    path = find_path(dungeon, adventurer[ENTITY_ROOM_POS], target_room)
+    return len(path) != 0
+
+def find_meanest_dragon(dungeon: DungeonT, adventurer: AdventurerT, dragons: list[DragonT]) -> DragonT:
+    """
+    returns: DragonT dragon with the highest level
+    """
+    meanest_dragon = dragons[0] 
+
+    for dragon in dragons : 
+        # skip unacessible dragons
+        if not room_is_accessible(dungeon, adventurer, dragon[ENTITY_ROOM_POS]): 
+            continue
+
+        if meanest_dragon[ENTITY_LEVEL] < dragon[ENTITY_LEVEL] :
+            meanest_dragon = dragon 
+            
+    return meanest_dragon
+
+def find_and_set_adventurer_path(game_data: GameDataT):
+    dungeon = game_data[GAME_DATA_DUNGEON]
+    adventurer = game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
+    dragons = game_data[GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
+    treasure = game_data[GAME_DATA_ENTITIES][ENTITIES_TREASURE]
+
+    target_room = None
+
+    if treasure_is_valid(treasure) and room_is_accessible(dungeon, adventurer, treasure[ENTITY_ROOM_POS]):
+        target_room = treasure[ENTITY_ROOM_POS]
+    else : 
+        
+        # Finds the target dragon and calculates the path to it.
+        # target_dragon = find_closest_dragon(adventurer, dragons)
+        target_dragon = find_meanest_dragon(dungeon, adventurer, dragons)
+        target_room = target_dragon[ENTITY_ROOM_POS]    
+        
     # If a target is found, calculate the path
-    if target_dragon != None:
-        path = find_path(dungeon, adventurer[ENTITY_ROOM_POS], target_dragon[ENTITY_ROOM_POS])
+    if target_room != None:
+        path = find_path(dungeon, adventurer[ENTITY_ROOM_POS], target_room)
         if path:
             adventurer[ADVENTURER_PATH] = path
-            return
+            return 
 
     # if dragon not found, or path not found, empty path
     adventurer[ADVENTURER_PATH] = MovementPathT()

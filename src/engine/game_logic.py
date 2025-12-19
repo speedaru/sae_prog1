@@ -126,11 +126,7 @@ def manually_update_player_path(event_info: EventInfoT, game_context: GameContex
 
 def auto_update_player_path(game_context: GameContextT):
     # update path
-    dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
-    adventurer = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
-    dragons = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
-
-    pathfinding.find_and_set_adventurer_path(dungeon, adventurer, dragons)
+    pathfinding.find_and_set_adventurer_path(game_context[GAME_CONTEXT_GAME_DATA])
 
 def do_dragon_collisions(adventurer: AdventurerT, dragons: list[DragonT]) -> GameStateT | NoneType:
     adventurer_room_pos: RoomPosT = adventurer[ENTITY_ROOM_POS]
