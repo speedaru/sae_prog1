@@ -15,39 +15,6 @@ from src.game.game_definitions import *
 from src.game.state_manager import *
 
 
-# def init_dragons(dragons: list[DragonT], dungeon: DungeonT):
-#     """
-#     fills list of dragons with random dragons based on dungeon
-#     """
-#     assert(len(dungeon) > 0) # make sure dungeon is not empty
-#
-#     dungeon_w, dungeon_h = dungeon_get_width(dungeon), dungeon_get_height(dungeon)
-#
-#     # in case we change dungeon repr col, row -> row, col
-#     dungeon_size: DungeonSizeT = (0, 0)
-#     if DUNGEON_SIZE_COL == 0 and DUNGEON_SIZE_ROW == 1:
-#         dungeon_size: DungeonSizeT = (dungeon_w, dungeon_h)
-#     elif DUNGEON_SIZE_ROW == 0 and DUNGEON_SIZE_COL == 1:
-#         dungeon_size: DungeonSizeT = (dungeon_h, dungeon_w)
-#
-#     dragon_create_dragons(dragons, dungeon_size)
-#     log_debug(f"created {len(dragons)} dragons")
-
-# def init_game_context(game_context: GameContextT, dungeon_to_load: DungeonT):
-#     # set dungeon
-#     game_context[GAME_CONTEXT_DUNGEON] = dungeon_to_load
-#     log_trace(f"seted dungeon: {game_context[GAME_CONTEXT_DUNGEON]}")
-#     log_debug("loaded dungeon !")
-#
-#     # create adventurer and dragons
-#     adventurer_init(game_context[GAME_CONTEXT_ADVENTURER])
-#     init_dragons(game_context[GAME_CONTEXT_DRAGONS], game_context[GAME_CONTEXT_DUNGEON]) # create dragons
-#
-#     # create a copy of originals, copy inplace
-#     game_context[GAME_CONTEXT_ORIGINAL_DUNGEON][:] = deepcopy(game_context[GAME_CONTEXT_DUNGEON])
-#     game_context[GAME_CONTEXT_ORIGINAL_ADVENTURER][:] = deepcopy(game_context[GAME_CONTEXT_ADVENTURER])
-#     game_context[GAME_CONTEXT_ORIGINAL_DRAGONS][:] = deepcopy(game_context[GAME_CONTEXT_DRAGONS])
-
 def load_game_data(game_context, game_data: GameDataT):
     game_context[GAME_CONTEXT_GAME_DATA][:] = deepcopy(game_data)
 
@@ -57,32 +24,6 @@ def load_game_data(game_context, game_data: GameDataT):
 def reset_game_data(game_context):
     # reset to originals by copying orignals, copy inplace
     game_context[GAME_CONTEXT_GAME_DATA][:] = deepcopy(game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA])
-
-    # original_dungeon = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_DUNGEON]
-    # original_adventurer = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
-    # original_dragons = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
-    # original_treasure_count = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_TREASURE_COUNT]
-    #
-    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON][:] = deepcopy(original_dungeon)
-    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = deepcopy(original_adventurer)
-    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = deepcopy(original_dragons)
-    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT] = original_treasure_count
-
-# def load_dungeon(game_context, dungeon: DungeonT):
-#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON] = deepcopy(dungeon)
-#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_DUNGEON][:] = deepcopy(dungeon)
-#
-# def load_adventurer(game_context, adventurer: AdventurerT):
-#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = deepcopy(adventurer)
-#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER][:] = deepcopy(adventurer)
-#
-# def load_dragons(game_context, dragons: list[DragonT]):
-#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = deepcopy(dragons)
-#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS][:] = deepcopy(dragons)
-#
-# def load_treasure_count(game_context, treasure_count):
-#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT] = treasure_count
-#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_TREASURE_COUNT] = treasure_count
 
 def _get_clicked_room(event_info: EventInfoT, dungeon: DungeonT) -> RoomPosT | NoneType:
     ev: FltkEvent = event_info[EVENT_INFO_EV]
@@ -268,6 +209,9 @@ def move_dragons_randomly(dungeon: DungeonT, entities: EntitiesT):
     """
     dragons: list = entities[ENTITIES_DRAGONS]
     entities_positions = _get_entities_positions(entities)
+
+    # remove adventure bcs adventurer needs to fight dragon
+    entities_positions.remove(entities[ENTITIES_ADVENTURER][ENTITY_ROOM_POS])
 
     for dragon in dragons:
         dragon_pos: RoomPosT = dragon[ENTITY_ROOM_POS]
