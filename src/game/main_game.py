@@ -147,8 +147,11 @@ def handle_logic(game_context: GameContextT):
     game_state: GameStateT = game_context[GAME_CONTEXT_GAME_STATE]
 
     if game_state == STATE_GAME_TURN_PLAYER or game_state == STATE_GAME_TURN_DUNGEON:
-        # handle collisions between adventurer and dragons
+        # handle collisions between adventurer and dragons and treasure
         game_logic.do_collisions(game_context)
+
+        # recalculate path every frame so we can see it update live
+        game_logic.auto_update_player_path(game_context)
 
 
 def main_loop():
@@ -220,5 +223,5 @@ def main_loop():
             break
 
         fps_manager.sleep_to_cap_fps(dt)
-        # log_debug_full(f"fps: {fps_manager.calculate_fps(dt)}")
+        log_fps(f"fps: {fps_manager.calculate_fps(dt)}")
 

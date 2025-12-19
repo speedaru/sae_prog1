@@ -124,6 +124,14 @@ def manually_update_player_path(event_info: EventInfoT, game_context: GameContex
     # clicked room is valid, add it to path
     movement_path.append(clicked_room_pos)
 
+def auto_update_player_path(game_context: GameContextT):
+    # update path
+    dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
+    adventurer = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
+    dragons = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
+
+    pathfinding.find_and_set_adventurer_path(dungeon, adventurer, dragons)
+
 def do_dragon_collisions(adventurer: AdventurerT, dragons: list[DragonT]) -> GameStateT | NoneType:
     adventurer_room_pos: RoomPosT = adventurer[ENTITY_ROOM_POS]
     adventurer_level: int = adventurer[ENTITY_LEVEL]
@@ -196,11 +204,10 @@ def do_dungeon_turn(game_context: GameContextT):
     # move adventurer along path
     # pathfinding.find_and_set_adventurer_path(adventurer, dragons)
     pathfinding.do_adventurer_path(adventurer)
+    adventurer[ADVENTURER_PATH] = MovementPathT()
 
     # handle collisions between adventurer and dragons
     do_collisions(game_context)
-
-    adventurer[ADVENTURER_PATH] = None
 
 def move_dragons_randomly(dungeon: DungeonT, entities: EntitiesT):
     """

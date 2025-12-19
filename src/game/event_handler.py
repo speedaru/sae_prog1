@@ -47,10 +47,6 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
         log_trace(f"loaded game, adve: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]=}")
         log_trace(f"loaded game, dragons: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS]=}")
         game_logic.load_game_data(game_context, loaded_game)
-        # game_logic.load_dungeon(game_context, loaded_game[GAME_DATA_DUNGEON])
-        # game_logic.load_adventurer(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER])
-        # game_logic.load_dragons(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS])
-        # game_logic.load_treasure_count(game_context, loaded_game[GAME_DATA_TREASURE_COUNT])
 
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
 
@@ -128,14 +124,14 @@ def handle_game_player_event(game_event: GameEventT, game_context: GameContextT)
 
     # draw player movement manually
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
-        game_logic.manually_update_player_path(event_info, game_context)
+        # game_logic.manually_update_player_path(event_info, game_context)
+        pass
     # finish dungeon turn
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
         game_logic.do_dungeon_turn(game_context)
 
         dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
-        # dragons: list[DragonT] = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
         entities: EntitiesT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES]
         game_logic.move_dragons_randomly(dungeon, entities)
 
