@@ -14,6 +14,8 @@ from src.engine.structs.entity import *
 from src.game.game_definitions import *
 from src.game.state_manager import *
 
+from src.utils.entity_utils import *
+
 
 def load_game_data(game_context, game_data: GameDataT):
     game_context[GAME_CONTEXT_GAME_DATA][:] = deepcopy(game_data)
@@ -40,16 +42,6 @@ def _get_clicked_room(event_info: EventInfoT, dungeon: DungeonT) -> RoomPosT | N
 
     return clicked_room
 
-def _get_entities_positions(entities: EntitiesT):
-    entities_positions = [dragon[ENTITY_ROOM_POS] for dragon in entities[ENTITIES_DRAGONS]]
-    entities_positions.append(entities[ENTITIES_ADVENTURER][ENTITY_ROOM_POS]) # adventurer
-
-    treasure = entities[ENTITIES_TREASURE]
-    if treasure_is_valid(treasure):
-        entities_positions.append(treasure[TREASURE_ROOM_POS]) # treasure
-
-    return entities_positions
-
 def rotate_room(event_info: EventInfoT, game_context: GameContextT):
     dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
 
@@ -74,7 +66,7 @@ def place_treasure(event_info: EventInfoT, dungeon: DungeonT, entities: Entities
         return False
 
     # check if there is already an entity in that room
-    entities_positions = _get_entities_positions(entities)
+    entities_positions = get_entities_positions(entities)
     if room_pos in entities_positions:
         log_error("can't place treasure, there is already an entity in that room")
         return False
@@ -211,7 +203,7 @@ def move_dragons_randomly(dungeon: DungeonT, entities: EntitiesT):
     and updates its position in the game state.
     """
     dragons: list = entities[ENTITIES_DRAGONS]
-    entities_positions = _get_entities_positions(entities)
+    entities_positions = get_entities_positions(entities)
 
     # remove adventure bcs adventurer needs to fight dragon
     entities_positions.remove(entities[ENTITIES_ADVENTURER][ENTITY_ROOM_POS])
