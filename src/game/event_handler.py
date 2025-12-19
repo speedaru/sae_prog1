@@ -4,11 +4,12 @@ import libs.fltk as fltk
 from libs.fltk import FltkEvent, TkEvent
 
 import src.engine.game_logic as game_logic
+import src.engine.parsing as parsing
 from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 from src.engine.event_info import *
-from src.engine.parsing import *
+# from src.engine.parsing import *
 
 from src.game.game_definitions import *
 from src.game.state_manager import *
@@ -45,12 +46,31 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
         log_trace(f"loaded game, dungeon: {loaded_game[GAME_DATA_DUNGEON]=}")
         log_trace(f"loaded game, adve: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]=}")
         log_trace(f"loaded game, dragons: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS]=}")
-        game_logic.load_dungeon(game_context, loaded_game[GAME_DATA_DUNGEON])
-        game_logic.load_adventurer(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER])
-        game_logic.load_dragons(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS])
+        game_logic.load_game_data(game_context, loaded_game)
+        # game_logic.load_dungeon(game_context, loaded_game[GAME_DATA_DUNGEON])
+        # game_logic.load_adventurer(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER])
+        # game_logic.load_dragons(game_context, loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS])
+        # game_logic.load_treasure_count(game_context, loaded_game[GAME_DATA_TREASURE_COUNT])
 
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
 
+def handle_game_event(game_event: GameEventT, game_context: GameContextT):
+    event_info = event_get_info(game_event)
+    if event_info[EVENT_INFO_TYPE] == None:
+        return None
+
+    # restart dungeon
+    if event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
+        game_logic.reset_game_data(game_context)
+
+        # set turn to dungeon
+        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+    # save game
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_S:
+        parsing.save_game(game_context)
+    # reload game
+    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_I:
+        parsing.load_saved_game(game_context)
 
 def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT):
     """
@@ -71,28 +91,44 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
     if event_info[EVENT_INFO_TYPE] == None:
         return None
 
+    # first handle general events no matter the turn
+    handle_game_event(game_event, game_context)
+
     log_debug_full(f"key pressed: {event_info[EVENT_INFO_KEY_PRESSED]}")
     # rotate room
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
         game_logic.rotate_room(event_info, game_context)
-    # restart dungeon
-    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
-        game_logic.reset_game_context(game_context)
     # player finish turn
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_PLAYER
+    # place treasure
+    elif event_info[EVENT_INFO_TYPE] == KEY_X2:
+        treasure_count = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT]
+        log_debug_full(f"treasure count: {treasure_count}")
+
+        dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
+        entities: EntitiesT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES]
+
+        # skip if no more treasures left
+        treasure_count = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT]
+        if treasure_count <= 0:
+            return
+
+        successfuly_placed = game_logic.place_treasure(event_info, dungeon, entities)
+        if successfuly_placed:
+            game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT] -= 1
 
 def handle_game_player_event(game_event: GameEventT, game_context: GameContextT):
     event_info = event_get_info(game_event)
     if event_info[EVENT_INFO_TYPE] == None:
         return None
 
+    # first handle general events no matter the turn
+    handle_game_event(game_event, game_context)
+
     # draw player movement manually
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
         game_logic.manually_update_player_path(event_info, game_context)
-    # restart dungeon
-    elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
-        game_logic.reset_game_context(game_context)
     # finish dungeon turn
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON

@@ -29,7 +29,7 @@ from typing import Any
 from libs.fltk import FltkEvent
 
 from src.engine.asset_manager import AssetsT, BlockT, BlockListT
-from src.engine.structs.dungeon import DungeonT
+from src.engine.structs.dungeon import DungeonT, dungeon_init
 from src.engine.structs.entity import EntityT, EntitiesT, entities_init
 from src.engine.structs.adventurer import AdventurerT
 from src.engine.structs.dragon import DragonT
@@ -54,12 +54,6 @@ GAME_CONTEXT_GAME_STATE = 1     # game state type
 GAME_CONTEXT_EVENT = 2          # fltk event if there is one
 GAME_CONTEXT_GAME_DATA = 3      # stores dungeon, entities etc
 GAME_CONTEXT_ORIGINAL_GAME_DATA = 4 # store original game state so we can restore it
-# GAME_CONTEXT_DUNGEON = 3        # current dungeon DungeonT
-# GAME_CONTEXT_ORIGINAL_DUNGEON = 4   # so we can reload it
-# GAME_CONTEXT_ADVENTURER = 5     # adventurer, AdventurerT
-# GAME_CONTEXT_DRAGONS = 6        # list dragons in the dungeon, list[DragonT]
-# GAME_CONTEXT_ORIGINAL_ADVENTURER = 7 # copy of adventurer when adventurer is created
-# GAME_CONTEXT_ORIGINAL_DRAGONS = 8 # copy of dragons when dragons is created
 GAME_CONTEXT_COUNT = 5
 
 # enum for game event
@@ -84,8 +78,15 @@ GAME_DATA_TREASURE_COUNT = 2 # treasure count in dungeon
 GAME_DATA_COUNT = 3
 
 def game_data_init() -> GameDataT:
-    game_data: GameDataT = [list() for _ in range(GAME_DATA_COUNT)]
-    entities_init(game_data[GAME_DATA_ENTITIES])
+    dungeon = DungeonT()
+    dungeon_init(dungeon, 0, 0)
+
+    entities: EntitiesT = EntitiesT()
+    entities_init(entities)
+
+    treasure_count = 0
+
+    game_data: GameDataT = [dungeon, entities, treasure_count]
     return game_data
 
 def game_context_init() -> GameContextT:

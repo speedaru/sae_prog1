@@ -1,13 +1,16 @@
+import json
 from types import NoneType
 from typing import Any
 
+from src.config import *
+
 from src.game.game_definitions import *
+
+import src.engine.game_logic as game_logic
 from src.engine.structs.dungeon import *
 from src.engine.structs.entity import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
-
-import src.engine.game_logic as game_logic
 
 
 # dungeon rooms representations
@@ -19,6 +22,12 @@ ROOM_REPR1 = ("╨", "╞", "╥","╡")
 ROOM_REPS = set().union(ROOM_REPR4, ROOM_REPR3, ROOM_REPR2_ADJ, ROOM_REPR2_OPP, ROOM_REPR1)
 
 _EntityTypeValueT = tuple[int, Any]
+
+_SimpleGameContextT = list[int | GameDataT]
+_SIMPLE_GAME_CONTEXT_GAME_STATE = 0
+_SIMPLE_GAME_CONTEXT_GAME_DATA = 1
+_SIMPLE_GAME_CONTEXT_ORIGINAL_GAME_DATA = 2
+_SIMPLE_GAME_CONTEXT_COUNT = 3
 
 
 def dungeon_ascii_to_room(ascii_room: str) -> RoomT:
@@ -91,14 +100,16 @@ def _entity_get_field(fields: list[str], field_idx: int) -> str | NoneType:
     return fields[field_idx]
 
 def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
+    unknown_ent = (ENTITY_UNKNOWN, None)
+
     FIELD_ENTITY_TYPE = 0
     entity_type_ch: str | NoneType = _entity_get_field(entity_fields, FIELD_ENTITY_TYPE)
     if entity_type_ch == None:
-        return (ENTITY_UNKNOWN, None)
+        return unknown_ent
 
     if not entity_type_ch in ENTITY_CHARS:
         log_error("unrecognized entity type: {entity_type}")
-        return (ENTITY_UNKNOWN, None)
+        return unknown_ent
 
     entity_type = ENTITY_CHARS[entity_type_ch]
     # handle adventurer and dragon together at first
@@ -108,7 +119,7 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
         row, col = _entity_get_field(entity_fields, FIELD_POS_ROW), _entity_get_field(entity_fields, FIELD_POS_COL)
         if isinstance(row, NoneType) or isinstance(col, NoneType):
             log_error(f"Adventurer parsing: failed to get room position from fields: {entity_fields}")
-            return (ENTITY_UNKNOWN, None)
+            return unknown_ent
 
         # convert fields to int
         row, col = int(row), int(col)
@@ -124,7 +135,7 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
             level = _entity_get_field(entity_fields, FIELD_LEVEL)
             if isinstance(level, NoneType):
                 log_error(f"Dragon parsing: failed to get level from fields: {entity_fields}")
-                return (ENTITY_UNKNOWN, None)
+                return unknown_ent
 
             # convert fields to int
             level = int(level)
@@ -134,7 +145,13 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
             dragon_init(dragon, level=level, room_pos=room_pos_create(row=row, col=col))
             return (entity_type, dragon)
     elif entity_type == ENTITY_TREASURE:
-        pass
+        FIELD_TREASURE_COUNT = 1
+        count = _entity_get_field(entity_fields, FIELD_TREASURE_COUNT)
+        if isinstance(count, NoneType):
+            log_error("Treasure parse: failed to get number of treasures in dungeon from fields: {entity_fields}")
+            return unknown_ent
+
+        return (entity_type, int(count))
 
     return (ENTITY_UNKNOWN, None)
 
@@ -149,6 +166,9 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
     dungeon_lines: list[str] = []
     entities_lines: list[str] = []
     for line in file_data.split("\n"):
+        if line == "":
+            continue
+
         # line starts with ╬
         if line[0] in ROOM_REPS:
             dungeon_lines.append(line)
@@ -185,9 +205,73 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
             log_debug_full(f"loaded adventurer: {game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]}")
         elif entity_type == ENTITY_DRAGON:
             dragons.append(entity)
+        elif entity_type == ENTITY_TREASURE:
+            log_debug_full(f"found treasure count: {entity}")
+            game_data[GAME_DATA_TREASURE_COUNT] = entity
 
     # game_logic.load_dragons(game_data, dragons)
     game_data[GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = dragons
 
     log_debug_full(f"loaded dungeon: {game_data[GAME_DATA_DUNGEON]}")
     return True
+
+def _to_json_safe(obj) -> str:
+    if isinstance(obj, tuple):
+        return {"__tuple__": [_to_json_safe(x) for x in obj]}
+    elif isinstance(obj, list):
+        return [_to_json_safe(x) for x in obj]
+    elif isinstance(obj, dict):
+        return {k: _to_json_safe(v) for k, v in obj.items()}
+    else:
+        # int, float, str, bool, None
+        return obj
+
+def _from_json_safe(obj):
+    if isinstance(obj, dict):
+        if "__tuple__" in obj:
+            return tuple(_from_json_safe(x) for x in obj["__tuple__"])
+        return {k: _from_json_safe(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_from_json_safe(x) for x in obj]
+    else:
+        return obj
+
+def serialize_game_context(game_context: GameContextT) -> str:
+    simple_game_context: list = [_SimpleGameContextT()] * _SIMPLE_GAME_CONTEXT_COUNT
+    simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_STATE] = game_context[GAME_CONTEXT_GAME_STATE]
+    simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_DATA] = game_context[GAME_CONTEXT_GAME_DATA]
+    simple_game_context[_SIMPLE_GAME_CONTEXT_ORIGINAL_GAME_DATA] = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA]
+
+    ret = _to_json_safe(simple_game_context)
+    log_debug_full(f"serialized:\n{ret}")
+
+    return json.dumps(ret)
+
+def deserialize_game_context(game_context: GameContextT, serialized_data: str):
+    deserialized_simple_game_context = _from_json_safe(json.loads(serialized_data))
+
+    game_context[GAME_CONTEXT_GAME_STATE] = deserialized_simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_STATE]
+    game_context[GAME_CONTEXT_GAME_DATA][:] = deserialized_simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_DATA]
+    game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][:] = deserialized_simple_game_context[_SIMPLE_GAME_CONTEXT_ORIGINAL_GAME_DATA]
+
+def save_game(game_context: GameContextT):
+    """
+    saves game context to a file
+    """
+    serialized_data: str = serialize_game_context(game_context)
+
+    with open(GAME_SAVE_FILE_PATH, "w") as f:
+        f.write(serialized_data)
+
+def load_saved_game(game_context):
+    """
+    reaload game context from file
+    """
+    serialized_data = ""
+
+    with open(GAME_SAVE_FILE_PATH, "r") as f:
+        serialized_data = f.read()
+
+    # reload game_context
+    deserialize_game_context(game_context, serialized_data)
+

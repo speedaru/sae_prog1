@@ -6,6 +6,7 @@ from src.engine.structs.dungeon import *
 from src.engine.structs.entity import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
+from src.engine.structs.treasure import *
 from src.engine.event_info import *
 from src.engine.parsing import *
 from src.engine.structs.entity import *
@@ -47,45 +48,101 @@ from src.game.state_manager import *
 #     game_context[GAME_CONTEXT_ORIGINAL_ADVENTURER][:] = deepcopy(game_context[GAME_CONTEXT_ADVENTURER])
 #     game_context[GAME_CONTEXT_ORIGINAL_DRAGONS][:] = deepcopy(game_context[GAME_CONTEXT_DRAGONS])
 
-def reset_game_context(game_context):
+def load_game_data(game_context, game_data: GameDataT):
+    game_context[GAME_CONTEXT_GAME_DATA][:] = deepcopy(game_data)
+
+    # save original game data also
+    game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][:] = deepcopy(game_data)
+
+def reset_game_data(game_context):
     # reset to originals by copying orignals, copy inplace
-    original_dungeon = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_DUNGEON]
-    original_adventurer = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
-    original_dragons = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
+    game_context[GAME_CONTEXT_GAME_DATA][:] = deepcopy(game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA])
 
-    game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON][:] = deepcopy(original_dungeon)
-    game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = deepcopy(original_adventurer)
-    game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = deepcopy(original_dragons)
+    # original_dungeon = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_DUNGEON]
+    # original_adventurer = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
+    # original_dragons = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
+    # original_treasure_count = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_TREASURE_COUNT]
+    #
+    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON][:] = deepcopy(original_dungeon)
+    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = deepcopy(original_adventurer)
+    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = deepcopy(original_dragons)
+    # game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT] = original_treasure_count
 
-    # set turn to dungeon
-    game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+# def load_dungeon(game_context, dungeon: DungeonT):
+#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON] = deepcopy(dungeon)
+#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_DUNGEON][:] = deepcopy(dungeon)
+#
+# def load_adventurer(game_context, adventurer: AdventurerT):
+#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = deepcopy(adventurer)
+#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER][:] = deepcopy(adventurer)
+#
+# def load_dragons(game_context, dragons: list[DragonT]):
+#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = deepcopy(dragons)
+#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS][:] = deepcopy(dragons)
+#
+# def load_treasure_count(game_context, treasure_count):
+#     game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT] = treasure_count
+#     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_TREASURE_COUNT] = treasure_count
 
-def load_dungeon(game_context, dungeon: DungeonT):
-    game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON] = deepcopy(dungeon)
-    game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_DUNGEON][:] = deepcopy(dungeon)
-
-def load_adventurer(game_context, adventurer: AdventurerT):
-    game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = deepcopy(adventurer)
-    game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER][:] = deepcopy(adventurer)
-
-def load_dragons(game_context, dragons: list[DragonT]):
-    game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = deepcopy(dragons)
-    game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS][:] = deepcopy(dragons)
-
-def rotate_room(event_info: EventInfoT, game_context: GameContextT):
+def _get_clicked_room(event_info: EventInfoT, dungeon: DungeonT) -> RoomPosT | NoneType:
     ev: FltkEvent = event_info[EVENT_INFO_EV]
     click_postion = fltk_ext.position_souris(ev)
 
     # rotate room at click positons
-    clicked_room_col = click_postion[0] // BLOCK_SCALED_SIZE[0]
-    clicked_room_row = click_postion[1] // BLOCK_SCALED_SIZE[1]
+    clicked_room_col = click_postion[0] // BLOCK_SCALED_SIZE[0] # x
+    clicked_room_row = click_postion[1] // BLOCK_SCALED_SIZE[1] # y
+    clicked_room: RoomPosT = room_pos_create(col=clicked_room_col, row=clicked_room_row)
 
     # if cursor outside of dungeon do nothing
+    if not dungeon_room_pos_in_bounds(dungeon, clicked_room):
+        return None
+
+    return clicked_room
+
+def _get_entities_positions(entities: EntitiesT):
+    entities_positions = [dragon[ENTITY_ROOM_POS] for dragon in entities[ENTITIES_DRAGONS]]
+    entities_positions.append(entities[ENTITIES_ADVENTURER][ENTITY_ROOM_POS]) # adventurer
+
+    treasure = entities[ENTITIES_TREASURE]
+    if treasure_is_valid(treasure):
+        entities_positions.append(treasure[TREASURE_ROOM_POS]) # treasure
+
+    return entities_positions
+
+def rotate_room(event_info: EventInfoT, game_context: GameContextT):
     dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
-    if clicked_room_col >= dungeon_get_width(dungeon) or clicked_room_row >= dungeon_get_height(dungeon):
+
+    clicked_room: RoomPosT | NoneType = _get_clicked_room(event_info, dungeon)
+    if clicked_room != None:
+        dungeon_rotate_room(dungeon, row=clicked_room[ROOM_POS_ROW], col=clicked_room[ROOM_POS_COL])
+
+def place_treasure(event_info: EventInfoT, dungeon: DungeonT, entities: EntitiesT) -> bool:
+    """
+    room_pos: room position in which to place the treasure
+    """
+    # check if there is already a treasure on the map
+    existing_treasure = entities[ENTITIES_TREASURE]
+    if existing_treasure != None and len(existing_treasure) == TREASURE_COUNT:
+        log_error(f"cant place treasure, a treasure is already in the dungeon: {existing_treasure}")
         return False
 
-    dungeon_rotate_room(dungeon, clicked_room_row, clicked_room_col)
+    # get clicked room pos
+    room_pos: RoomPosT | NoneType = _get_clicked_room(event_info, dungeon)
+    if room_pos == None:
+        log_error("failed to place treasure, invalid room clicked")
+        return False
+
+    # check if there is already an entity in that room
+    entities_positions = _get_entities_positions(entities)
+    if room_pos in entities_positions:
+        log_error("can't place treasure, there is already an entity in that room")
+        return False
+
+    random_image_id = randrange(TREASURES_IMAGE_COUNT)
+    treasure: TreasureT = treasure_create(room_pos=room_pos, image_id=random_image_id)
+
+    entities[ENTITIES_TREASURE] = treasure
+    return True
 
 def manually_update_player_path(event_info: EventInfoT, game_context: GameContextT):
     ev: FltkEvent = event_info[EVENT_INFO_EV]
@@ -126,13 +183,7 @@ def manually_update_player_path(event_info: EventInfoT, game_context: GameContex
     # clicked room is valid, add it to path
     movement_path.append(clicked_room_pos)
 
-def do_collisions(game_context: GameContextT):
-    # adventurer or dragons not initialized
-    adventurer = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
-    dragons: list = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
-    if adventurer == None or dragons == None:
-        return
-
+def do_dragon_collisions(adventurer: AdventurerT, dragons: list[DragonT]) -> GameStateT | NoneType:
     adventurer_room_pos: RoomPosT = adventurer[ENTITY_ROOM_POS]
     adventurer_level: int = adventurer[ENTITY_LEVEL]
 
@@ -146,7 +197,10 @@ def do_collisions(game_context: GameContextT):
         # player wins against dragons who have a LOWER OR EQUAL level
         else:
             weak_dragons.append(dragon)
-    # log_debug(f"dungeon has {len(weak_dragons)} weak dragons")
+
+    log_debug_full(f"dungeon has {len(weak_dragons)} weak dragons")
+
+    # check dragon collisions
     for dragon in dragons:
         # ignore dragons not in same room
         if adventurer_room_pos != dragon[ENTITY_ROOM_POS]:
@@ -161,11 +215,39 @@ def do_collisions(game_context: GameContextT):
             adventurer[ENTITY_LEVEL] += 1
         elif dragon in strong_dragons: # player loses against stronger dragon
             # finish game
-            game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_DONE_LOST
+            return STATE_GAME_DONE_LOST
 
     # handle game win if last dragon slain
     if len(dragons) == 0:
-        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_DONE_WON
+        return STATE_GAME_DONE_WON
+
+    return None
+
+def do_treasure_collisions(adventurer: AdventurerT, entities):
+    treasure: TreasureT | NoneType = entities[ENTITIES_TREASURE]
+    if not treasure_is_valid(treasure):
+        return
+
+    # remove treasure if collided with player
+    if adventurer[ENTITY_ROOM_POS] == treasure[TREASURE_ROOM_POS]:
+        entities[ENTITIES_TREASURE] = None
+
+def do_collisions(game_context: GameContextT):
+    # adventurer or dragons not initialized
+    adventurer = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
+    dragons: list = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
+    if adventurer == None or dragons == None:
+        return
+
+    # handle dragon collisions
+    new_state = do_dragon_collisions(adventurer, dragons)
+    if new_state != None:
+        game_context[GAME_CONTEXT_GAME_STATE] = new_state
+        return
+
+    # handle treasure collisions
+    do_treasure_collisions(adventurer, game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES])
+    
 
 def do_dungeon_turn(game_context: GameContextT):
     adventurer: AdventurerT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
@@ -185,9 +267,7 @@ def move_dragons_randomly(dungeon: DungeonT, entities: EntitiesT):
     and updates its position in the game state.
     """
     dragons: list = entities[ENTITIES_DRAGONS]
-    entities_positions = [dragon[ENTITY_ROOM_POS] for dragon in dragons]
-    entities_positions.append(entities[ENTITIES_ADVENTURER][ENTITY_ROOM_POS]) # adventurer
-    # entities_positions.append(entities[ENTITIES_TREASURE][ENTITY_ROOM_POS]) # treasure
+    entities_positions = _get_entities_positions(entities)
 
     for dragon in dragons:
         dragon_pos: RoomPosT = dragon[ENTITY_ROOM_POS]

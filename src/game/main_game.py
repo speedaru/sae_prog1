@@ -14,6 +14,7 @@ from src.engine.asset_manager import *
 from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
+from src.engine.structs.treasure import *
 from src.engine.parsing import *
 
 import src.game.gui as gui
@@ -56,6 +57,7 @@ def render_game(game_context: GameContextT):
     dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
     adventurer: AdventurerT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
     dragons: list[DragonT] = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
+    treasure: TreasureT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_TREASURE]
 
     # render dungeon
     if dungeon != None:
@@ -79,6 +81,11 @@ def render_game(game_context: GameContextT):
             dragon_render(dragon, assets)
     else:
         log_error("cant render dragons because dragons is None")
+
+    # render treasure
+    if treasure != None:
+        log_debug_full(f"rendering treasure: {treasure}")
+        treasure_render(treasure, assets)
 
 def render_game_end(game_context: GameContextT):
     GAME_END_MESSAGE_FONT_SIZE = 48
@@ -160,17 +167,15 @@ def main_loop():
 
     # globals
     assets: AssetsT = list()
-    # current_dungeon: DungeonT = DungeonT()
-    # adventurer: AdventurerT = AdventurerT()
-    # dragons: list[DragonT] = list[DragonT]()
     game_state = STATE_MENU_START
-    game_context: GameContextT = [None] * GAME_CONTEXT_COUNT
+    game_context: GameContextT = game_context_init()
 
     # init stuff
     window_title = "Wall Is You"
     window_icon_file: str = os.path.join(ASSETS_DIR, "game_icon.ico")
     gui.create_window(window_title, window_icon_file)
 
+    # init assets
     if not asset_manager_initialized(assets):
         assets = asset_manager_init()
 
@@ -183,12 +188,6 @@ def main_loop():
     game_context[GAME_CONTEXT_EVENT] = game_event
     game_context[GAME_CONTEXT_GAME_DATA] = game_data_init()
     game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA] = game_data_init()
-    # game_context[GAME_CONTEXT_DUNGEON] = current_dungeon
-    # game_context[GAME_CONTEXT_ORIGINAL_DUNGEON] = DungeonT() # later filled by ref
-    # game_context[GAME_CONTEXT_ADVENTURER] = adventurer
-    # game_context[GAME_CONTEXT_DRAGONS] = dragons
-    # game_context[GAME_CONTEXT_ORIGINAL_ADVENTURER] = AdventurerT() # later filled by ref
-    # game_context[GAME_CONTEXT_ORIGINAL_DRAGONS] = list[DragonT]() # later filled by ref
 
     while True:
         # handle fps cap and delta time
