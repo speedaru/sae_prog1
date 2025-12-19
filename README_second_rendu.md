@@ -75,6 +75,7 @@ dungeons/ : Contient les fichiers .txt des niveaux prédéfinis.
 * **Rotation des salles** : Cliquez-gauche sur une salle.
 * **Tracer l'intention** : se fait automatiquement (et visualisation).
 * **Confirmer l'intention** : Appuyez sur la touche **Espace** pour confirmer l'intention.
+* **Placer un tresor** : Clic droit.
 * **Réinitialiser la partie** : Appuyez sur la touche **R**.
 * **Sauvegarder la partie** : Appuyez sur la touche **S**.
 * **Charger une partie sauvegardée** : Appuyez sur la touche **I** (i comme importer).
