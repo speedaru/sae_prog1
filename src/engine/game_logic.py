@@ -204,7 +204,7 @@ def do_dungeon_turn(game_context: GameContextT):
     # move adventurer along path
     # pathfinding.find_and_set_adventurer_path(adventurer, dragons)
     pathfinding.do_adventurer_path(adventurer)
-    adventurer[ADVENTURER_PATH] = None
+    adventurer[ADVENTURER_PATH] = MovementPathT()
 
     # handle collisions between adventurer and dragons
     do_collisions(game_context)

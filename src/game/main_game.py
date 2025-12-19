@@ -223,5 +223,5 @@ def main_loop():
             break
 
         fps_manager.sleep_to_cap_fps(dt)
-        # log_debug_full(f"fps: {fps_manager.calculate_fps(dt)}")
+        log_fps(f"fps: {fps_manager.calculate_fps(dt)}")
 

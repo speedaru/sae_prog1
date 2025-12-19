@@ -79,10 +79,14 @@ def find_and_set_adventurer_path(dungeon: DungeonT, adventurer: AdventurerT, dra
     target_dragon = find_closest_dragon(adventurer, dragons)
     
     # If a target is found, calculate the path
-    if target_dragon is not None:
+    if target_dragon != None:
         path = find_path(dungeon, adventurer[ENTITY_ROOM_POS], target_dragon[ENTITY_ROOM_POS])
         if path:
             adventurer[ADVENTURER_PATH] = path
+            return
+
+    # if dragon not found, or path not found, empty path
+    adventurer[ADVENTURER_PATH] = MovementPathT()
 
 def do_adventurer_path(adventurer: AdventurerT):
     # Adventurer movement.

@@ -10,9 +10,10 @@ LOG_LEVEL_DEBUG_FULL = 0x4
 LOG_LEVEL_EVENT = 0x8
 LOG_LEVEL_TRACE = 0x10
 LOG_LEVEL_ERROR = 0x20
+LOG_LEVEL_FPS   = 0x40
 
 # LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_DEBUG | LOG_LEVEL_DEBUG_FULL | LOG_LEVEL_EVENT
-LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_DEBUG | LOG_LEVEL_EVENT | LOG_LEVEL_ERROR
+LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_DEBUG | LOG_LEVEL_EVENT | LOG_LEVEL_ERROR | LOG_LEVEL_FPS
 # LOG_LEVEL = LOG_LEVEL_RELEASE
 
 def log(log_level, message: str, new_line: bool = True):
@@ -45,3 +46,6 @@ def log_trace(message: str, new_line: bool = True):
 
 def log_error(message: str, new_line: bool = True):
     log(LOG_LEVEL_ERROR, message, new_line)
+
+def log_fps(message: str, new_line: bool = True):
+    log(LOG_LEVEL_FPS, message, new_line)
