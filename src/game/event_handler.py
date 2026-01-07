@@ -94,10 +94,10 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
     # rotate room
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
         game_logic.rotate_room(event_info, game_context)
-    # player finish turn
+    # finish turning rooms and stuff
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         # execute dungeon turn
-        game_logic.do_dungeon_turn(game_context)
+        game_logic.oo_dungeon_turn(game_context)
 
         # move dragons
         dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]

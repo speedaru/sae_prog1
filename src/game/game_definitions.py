@@ -33,13 +33,15 @@ from src.engine.structs.dungeon import DungeonT, dungeon_init
 from src.engine.structs.entity import EntityT, EntitiesT, entities_init
 from src.engine.structs.adventurer import AdventurerT
 from src.engine.structs.dragon import DragonT
+from src.engine.asset_manager import BLOCK_SCALED_SIZE
 
 from src.game.state_manager import GameStateT
 from src.game.keys import *
 
 
 # constants
-WINDOW_SIZE = [768, 768]
+WINDOW_GRID_SIZE = [6, 6]
+WINDOW_SIZE = [WINDOW_GRID_SIZE[0] * BLOCK_SCALED_SIZE[0], WINDOW_GRID_SIZE[1] * BLOCK_SCALED_SIZE[1]]
 EXIT_KEY = KEY_ESCAPE
 DUNGEON_DRAGONS_COUNT = 3
 
@@ -62,32 +64,54 @@ GAME_EVENT_DATA = 1 # event data
 GAME_EVENT_COUNT = 2
 
 # entity enums
-ENTITY_UNKNOWN = 0xffff
-ENTITY_ADVENTURER = 0
-ENTITY_DRAGON = 1
-ENTITY_TREASURE = 2
-ENTITY_COUNT = 3
+E_ENTITY_UNKNOWN = 0xffff
+E_ENTITY_ADVENTURER = 0
+E_ENTITY_DRAGON = 1
+E_ENTITY_TREASURE = 2
+E_ENTITY_COUNT = 3
 
-ENTITY_CHARS = { "A": ENTITY_ADVENTURER, "D": ENTITY_DRAGON, "T": ENTITY_TREASURE }
+# game mode enums
+GameModeE = int
+E_GAME_MODE_NORMAL = 0
+E_GAME_MODE_EXTREME = 1
+E_GAME_MODE_COUNT = 2
+
+ENTITY_CHARS = { "A": E_ENTITY_ADVENTURER, "D": E_ENTITY_DRAGON, "T": E_ENTITY_TREASURE }
 
 # dungeon, player, dragons, etc...
 GameDataT = list[DungeonT | EntitiesT | int]
 GAME_DATA_DUNGEON = 0
 GAME_DATA_ENTITIES = 1
 GAME_DATA_TREASURE_COUNT = 2 # treasure count in dungeon
-GAME_DATA_COUNT = 3
+GAME_DATA_GAME_MODE = 3
+GAME_DATA_ROUND = 4 # which round are we on
+GAME_DATA_COUNT = 5
 
 def game_data_init() -> GameDataT:
+    # dungeon
     dungeon = DungeonT()
     dungeon_init(dungeon, 0, 0)
 
+    # entities
     entities: EntitiesT = EntitiesT()
     entities_init(entities)
 
-    treasure_count = 0
+    game_data: GameDataT = [None] * GAME_DATA_COUNT
+    game_data[GAME_DATA_DUNGEON] = dungeon
+    game_data[GAME_DATA_ENTITIES] = entities
+    game_data[GAME_DATA_TREASURE_COUNT] = 0
+    game_data[GAME_DATA_GAME_MODE] = E_GAME_MODE_NORMAL
+    game_data[GAME_DATA_ROUND] = 1
 
-    game_data: GameDataT = [dungeon, entities, treasure_count]
     return game_data
 
 def game_context_init() -> GameContextT:
     return [[None] for _ in range(GAME_CONTEXT_COUNT)]
+
+def get_game_mode_text(game_mode: GameModeE):
+    if game_mode == E_GAME_MODE_NORMAL:
+        return "normal"
+    elif game_mode == E_GAME_MODE_EXTREME:
+        return "extreme"
+    else:
+        return "unknown"

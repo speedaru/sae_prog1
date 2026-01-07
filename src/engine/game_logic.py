@@ -43,7 +43,13 @@ def _get_clicked_room(event_info: EventInfoT, dungeon: DungeonT) -> RoomPosT | N
     return clicked_room
 
 def rotate_room(event_info: EventInfoT, game_context: GameContextT):
-    dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
+    game_data = game_context[GAME_CONTEXT_GAME_DATA]
+    dungeon: DungeonT = game_data[GAME_DATA_DUNGEON]
+
+    # cant rotate room in extreme mode past round 1
+    game_round = game_data[GAME_DATA_ROUND]
+    if game_round > 1:
+        return
 
     clicked_room: RoomPosT | NoneType = _get_clicked_room(event_info, dungeon)
     if clicked_room != None:
@@ -196,6 +202,8 @@ def do_dungeon_turn(game_context: GameContextT):
 
     # handle collisions between adventurer and dragons
     do_collisions(game_context)
+
+    game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ROUND] += 1
 
 def move_dragons_randomly(dungeon: DungeonT, entities: EntitiesT):
     """

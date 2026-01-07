@@ -20,6 +20,7 @@ from src.engine.parsing import *
 import src.game.gui as gui
 import src.game.start_menu as start_menu
 import src.game.event_handler as event_handler
+import src.game.hud as hud
 from src.game.state_manager import *
 from src.game.game_definitions import *
 
@@ -87,6 +88,10 @@ def render_game(game_context: GameContextT):
         log_debug_full(f"rendering treasure: {treasure}")
         treasure_render(treasure, assets)
 
+    # render hud
+    hud_elements = hud.get_hud_elements(game_context)
+    hud.render_hud_elements(hud_elements)
+
 def render_game_end(game_context: GameContextT):
     GAME_END_MESSAGE_FONT_SIZE = 48
     game_state: GameStateT = game_context[GAME_CONTEXT_GAME_STATE]
@@ -138,8 +143,8 @@ def render(game_context: GameContextT) -> GameEventDataT:
     elif game_state == STATE_GAME_DONE_WON or game_state == STATE_GAME_DONE_LOST:
         event_data = render_game_end(game_context)
 
-    # render game state info
-    game_state_render(game_context[GAME_CONTEXT_GAME_STATE])
+    # # render game state info
+    # game_state_render(game_context[GAME_CONTEXT_GAME_STATE])
 
     return event_data
 

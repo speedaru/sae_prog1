@@ -21,6 +21,7 @@ ROOM_CONNECTION_RIGHT = 1
 ROOM_CONNECTION_DOWN = 2
 ROOM_CONNECTION_LEFT = 3
 
+ScreenPosT = tuple[int, int]
 RoomPosT = tuple[int, int]
 ROOM_POS_COL = 0
 ROOM_POS_ROW = 1
