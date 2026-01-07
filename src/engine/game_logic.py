@@ -47,8 +47,9 @@ def rotate_room(event_info: EventInfoT, game_context: GameContextT):
     dungeon: DungeonT = game_data[GAME_DATA_DUNGEON]
 
     # cant rotate room in extreme mode past round 1
+    game_mode = game_data[GAME_DATA_GAME_MODE]
     game_round = game_data[GAME_DATA_ROUND]
-    if game_round > 1:
+    if game_mode == E_GAME_MODE_EXTREME and game_round > 1:
         return
 
     clicked_room: RoomPosT | NoneType = _get_clicked_room(event_info, dungeon)
