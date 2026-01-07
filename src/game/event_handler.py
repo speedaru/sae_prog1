@@ -97,7 +97,7 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
     # finish turning rooms and stuff
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         # execute dungeon turn
-        game_logic.oo_dungeon_turn(game_context)
+        game_logic.do_dungeon_turn(game_context)
 
         # move dragons
         dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
