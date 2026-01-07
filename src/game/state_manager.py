@@ -11,8 +11,8 @@ STATE_EXIT = 5
 STATE_COUNT = 6
 
 
-def game_state_render(game_state: GameStateT):
-    TEXT_POS = (10, 5)
+def get_game_state_text(game_state: GameStateT) -> str:
+    # TEXT_POS = (10, 5)
 
     state_text = ""
     if game_state == STATE_MENU_START:
@@ -24,6 +24,7 @@ def game_state_render(game_state: GameStateT):
 
     # no state to show
     if state_text == "":
-        return
+        return ""
 
-    fltk.texte(TEXT_POS[0], TEXT_POS[1], state_text, couleur='lime', taille=18)
+    # fltk.texte(TEXT_POS[0], TEXT_POS[1], state_text, couleur='lime', taille=18)
+    return state_text

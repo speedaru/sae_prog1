@@ -21,6 +21,7 @@ from src.utils.geom import *
 from src.engine.asset_manager import ASSETS_DIR
 
 import src.utils.fltk_extensions as fltk_ext 
+import src.utils.gui_geom as gui_geom 
 
 
 # types
@@ -109,6 +110,14 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
     background_path = os.path.join(ASSETS_DIR, BACKGROUND_FILE)
     fltk.image(0,0,background_path,ancrage="nw")
 
+    # game mode
+    text = f"Mode de jeu: {get_game_mode_text(game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_GAME_MODE])}"
+    font_size = 24
+    pos = gui_geom.anchor_text(gui_geom.E_UI_ANCHOR_BOTTOM_LEFT, text, font_size, padding=20)
+    fltk.texte(pos[0], pos[1], chaine=text, couleur="yellow", taille=font_size)
+    game_mode_button_size = fltk.taille_texte(text, taille=font_size)
+    game_mode_button_rect = (pos, (pos[0] + game_mode_button_size[0], pos[1] + game_mode_button_size[1]))
+
     # retrieving dungeon files
     path_dungeons = Path(DUNGEON_FILES_DIR)
 
@@ -147,13 +156,19 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
     if fltk.type_ev(ev) == KEY_X1:
         click_pos = fltk_ext.position_souris(ev)  # coordonnées de la souris
 
+        # game mode button clicked
+        if in_rectangle(click_pos, game_mode_button_rect[0], game_mode_button_rect[1]):
+            game_data = game_context[GAME_CONTEXT_GAME_DATA]
+            current_mode = game_data[GAME_DATA_GAME_MODE]
+            game_data[GAME_DATA_GAME_MODE] = (current_mode + 1) % E_GAME_MODE_COUNT
+
         # check which text was clicked
         for position in positions:
             tl = _get_tl(position)
             br = _get_br(position)
             if in_rectangle(click_pos, tl, br):
                 game_file_path = os.path.join(DUNGEON_FILES_DIR, str(position[_POSITIONS_DUNGEON]))
-                parsed_game_data: GameDataT = game_data_init()
+                parsed_game_data: GameDataT = game_context[GAME_CONTEXT_GAME_DATA][:]
                 parsed_successfuly = game_data_parse_file(parsed_game_data, game_file_path)
                 if parsed_successfuly:
                     return parsed_game_data

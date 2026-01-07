@@ -102,7 +102,7 @@ def _entity_get_field(fields: list[str], field_idx: int) -> str | NoneType:
     return fields[field_idx]
 
 def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
-    unknown_ent = (ENTITY_UNKNOWN, None)
+    unknown_ent = (E_ENTITY_UNKNOWN, None)
 
     FIELD_ENTITY_TYPE = 0
     entity_type_ch: str | NoneType = _entity_get_field(entity_fields, FIELD_ENTITY_TYPE)
@@ -115,7 +115,7 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
 
     entity_type = ENTITY_CHARS[entity_type_ch]
     # handle adventurer and dragon together at first
-    if entity_type == ENTITY_ADVENTURER or entity_type == ENTITY_DRAGON:
+    if entity_type == E_ENTITY_ADVENTURER or entity_type == E_ENTITY_DRAGON:
         FIELD_POS_ROW = 1
         FIELD_POS_COL = 2
         row, col = _entity_get_field(entity_fields, FIELD_POS_ROW), _entity_get_field(entity_fields, FIELD_POS_COL)
@@ -127,12 +127,12 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
         row, col = int(row), int(col)
 
         # now handle adventurer and dragon separatly
-        if entity_type == ENTITY_ADVENTURER:
+        if entity_type == E_ENTITY_ADVENTURER:
             # create adventurer
             adventurer: AdventurerT = AdventurerT()
             adventurer_init(adventurer, room_pos=room_pos_create(row=row, col=col))
             return (entity_type, adventurer)
-        elif entity_type == ENTITY_DRAGON:
+        elif entity_type == E_ENTITY_DRAGON:
             FIELD_LEVEL = 3
             level = _entity_get_field(entity_fields, FIELD_LEVEL)
             if isinstance(level, NoneType):
@@ -146,7 +146,7 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
             dragon: DragonT = DragonT()
             dragon_init(dragon, level=level, room_pos=room_pos_create(row=row, col=col))
             return (entity_type, dragon)
-    elif entity_type == ENTITY_TREASURE:
+    elif entity_type == E_ENTITY_TREASURE:
         FIELD_TREASURE_COUNT = 1
         count = _entity_get_field(entity_fields, FIELD_TREASURE_COUNT)
         if isinstance(count, NoneType):
@@ -155,7 +155,7 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
 
         return (entity_type, int(count))
 
-    return (ENTITY_UNKNOWN, None)
+    return (E_ENTITY_UNKNOWN, None)
 
 def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool:
     # read file
@@ -198,16 +198,16 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
         entity_fields = entity_data.split(" ")
 
         entity_type, entity = parse_entity(entity_fields)
-        if entity_type == ENTITY_UNKNOWN or entity == None:
+        if entity_type == E_ENTITY_UNKNOWN or entity == None:
             log_error(f"unrecognized entity: {entity_data}")
             continue
 
-        if entity_type == ENTITY_ADVENTURER:
+        if entity_type == E_ENTITY_ADVENTURER:
             game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = entity
             log_debug_full(f"loaded adventurer: {game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]}")
-        elif entity_type == ENTITY_DRAGON:
+        elif entity_type == E_ENTITY_DRAGON:
             dragons.append(entity)
-        elif entity_type == ENTITY_TREASURE:
+        elif entity_type == E_ENTITY_TREASURE:
             log_debug_full(f"found treasure count: {entity}")
             game_data[GAME_DATA_TREASURE_COUNT] = entity
 
