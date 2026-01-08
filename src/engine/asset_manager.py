@@ -20,7 +20,7 @@ BLOCK_SCALE = 2
 BLOCK_SCALED_SIZE = (BLOCK_SIZE[0] * BLOCK_SCALE, BLOCK_SIZE[1] * BLOCK_SCALE)
 
 CHARACTERS_SIZES = (64, 64)
-TREASURE_SIZES = (48, 48)
+ITEM_SIZES = (48, 48)
 
 # types
 BlockT = list[PhotoImage]
@@ -44,18 +44,21 @@ CHARACTERS_ADVENTURER = 0
 CHARACTERS_DRAGONS = 1
 CHARACTERS_COUNT = 2
 
-TREASURES_IMAGE1 = 0
-TREASURES_IMAGE2 = 1
-TREASURES_IMAGE3 = 2
-TREASURES_IMAGE4 = 3
-TREASURES_IMAGE5 = 4
-TREASURES_IMAGE_COUNT = 5
+# items images in assets list
+T_ITEMS_TREASURES_IMAGE1 = 0
+T_ITEMS_TREASURES_IMAGE2 = 1
+T_ITEMS_TREASURES_IMAGE3 = 2
+T_ITEMS_TREASURES_IMAGE4 = 3
+T_ITEMS_TREASURES_IMAGE5 = 4
+T_TREASURES_IMAGE_COUNT = 5 # how many treasure images are there
+T_ITEMS_STRONG_SWORD = 5
+T_ITEMS_COUNT = 6
 
 # enum for assets list
-ASSETS_BLOCKS = 0
-ASSETS_CHARACTERS = 1
-ASSETS_TREASURES = 2
-ASSETS_COUNT = 3
+T_ASSETS_BLOCKS = 0
+T_ASSETS_CHARACTERS = 1
+T_ASSETS_ITEMS = 2
+T_ASSETS_COUNT = 3
 
 # max rotations for each block image in order
 BLOCK_MAX_ROTATIONS = (1, 4, 4, 2, 4, 1, 1)
@@ -73,8 +76,8 @@ def asset_manager_init() -> AssetsT:
 
     Returns:
         AssetsT: A list structure organized by constants:
-                 - `assets[ASSETS_BLOCKS]`: A list of block images (each element is a list of rotations).
-                 - `assets[ASSETS_CHARACTERS]`: A list of character images.
+                 - `assets[T_ASSETS_BLOCKS]`: A list of block images (each element is a list of rotations).
+                 - `assets[T_ASSETS_CHARACTERS]`: A list of character images.
     """
     BLOCK_FILE_NAMES = ("block_solid.png", "block_single.png", "block_double_adjacent.png",
                         "block_double_opposite.png", "block_triple.png", "block_quad.png",
@@ -85,8 +88,8 @@ def asset_manager_init() -> AssetsT:
     # reserve space so we can use index directly instead of using append()
     blocks = [[PhotoImage()] * states_count for states_count in BLOCK_MAX_ROTATIONS]
     characters = [PhotoImage()] * CHARACTERS_COUNT # knight and dragons
-    treasures = [PhotoImage()] * TREASURES_IMAGE_COUNT
-    assets: AssetsT = [list()] * ASSETS_COUNT # all assets
+    items = [PhotoImage()] * T_ITEMS_COUNT
+    assets: AssetsT = [list()] * T_ASSETS_COUNT # all assets
 
     # load blocks
     for block_id, asset_file_name in enumerate(BLOCK_FILE_NAMES):
@@ -105,15 +108,19 @@ def asset_manager_init() -> AssetsT:
         characters[character] = fltk._load_tk_image(image, CHARACTERS_SIZES[0], CHARACTERS_SIZES[1])
 
     # load treasure images
-    TREASURE_FILE_NAMES = tuple([f"treasure{i}.png" for i in range(1, TREASURES_IMAGE_COUNT + 1)])
+    TREASURE_FILE_NAMES = tuple([f"treasure{i}.png" for i in range(1, T_TREASURES_IMAGE_COUNT + 1)])
     for treasure in range(len(TREASURE_FILE_NAMES)):
         image = os.path.join(ASSETS_DIR, TREASURE_FILE_NAMES[treasure])
-        treasures[treasure] = fltk._load_tk_image(image, TREASURE_SIZES[0], TREASURE_SIZES[1])
+        items[treasure] = fltk._load_tk_image(image, ITEM_SIZES[0], ITEM_SIZES[1])
+
+    # load strong sword image
+    image = os.path.join(ASSETS_DIR, "scithersword.png")
+    items[T_ITEMS_STRONG_SWORD] = fltk._load_tk_image(image, ITEM_SIZES[0], ITEM_SIZES[1])
 
     # set assets
-    assets[ASSETS_BLOCKS] = blocks
-    assets[ASSETS_CHARACTERS] = characters
-    assets[ASSETS_TREASURES] = treasures
+    assets[T_ASSETS_BLOCKS] = blocks
+    assets[T_ASSETS_CHARACTERS] = characters
+    assets[T_ASSETS_ITEMS] = items
 
     return assets
 
@@ -130,17 +137,17 @@ def asset_manager_initialized(assets: AssetsT) -> bool:
     """
     # checks lenght of assets
     assets_count = len(assets)
-    if assets_count != ASSETS_COUNT:
+    if assets_count != T_ASSETS_COUNT:
         return False
 
     # check length of blocks
-    blocks = assets[ASSETS_BLOCKS]
+    blocks = assets[T_ASSETS_BLOCKS]
     blocks_count = len(blocks)
     if blocks_count != BLOCK_COUNT:
         return False
 
     # check length of characters
-    characters = assets[ASSETS_CHARACTERS]
+    characters = assets[T_ASSETS_CHARACTERS]
     characters_count = len(characters)
     if characters_count != CHARACTERS_COUNT:
         return False
@@ -166,7 +173,7 @@ def asset_manager_get_block(assets: AssetsT, block_idx: int, rotation_count: int
     if not asset_manager_initialized(assets):
         return None
 
-    blocks: BlockListT = assets[ASSETS_BLOCKS]
+    blocks: BlockListT = assets[T_ASSETS_BLOCKS]
 
     log_trace(f"[asset_manger] getting block: {block_idx}")
     if block_idx >= len(blocks): # out of bounds check

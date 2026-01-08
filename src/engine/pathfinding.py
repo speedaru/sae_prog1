@@ -17,16 +17,16 @@ from src.utils.entity_utils import *
 #     if not dragons:
 #         return None
 #         
-#     adv_pos = adventurer[ENTITY_ROOM_POS]
+#     adv_pos = adventurer[T_BASE_ENTITY_ROOM_POS]
 #     
 #     # Initialization with the first dragon
 #     closest_dragon = dragons[0]
-#     min_dist = dungeon_get_room_distance(adv_pos, closest_dragon[ENTITY_ROOM_POS])
+#     min_dist = dungeon_get_room_distance(adv_pos, closest_dragon[T_BASE_ENTITY_ROOM_POS])
 #     
 #     # Iterate through other dragons with a simple for loop 
 #     for i in range(1, len(dragons)):
 #         dragon = dragons[i]
-#         dist = dungeon_get_room_distance(adv_pos, dragon[ENTITY_ROOM_POS])
+#         dist = dungeon_get_room_distance(adv_pos, dragon[T_BASE_ENTITY_ROOM_POS])
 #         
 #         # If a closer dragon is found
 #         if dist < min_dist:
@@ -34,7 +34,7 @@ from src.utils.entity_utils import *
 #             closest_dragon = dragon
 #         # If distance is equal, prioritize the highest level
 #         elif dist == min_dist:
-#             if dragon[ENTITY_LEVEL] > closest_dragon[ENTITY_LEVEL]:
+#             if dragon[T_ENTITY_LEVEL] > closest_dragon[ENTITY_LEVEL]:
 #                 closest_dragon = dragon
 #                 
 #     return closest_dragon
@@ -79,7 +79,7 @@ def is_valid_path(dungeon: DungeonT, start_pos: RoomPosT, path: MovementPathT) -
     return True
 
 def room_is_accessible(dungeon: DungeonT, adventurer: AdventurerT, target_room: RoomPosT):
-    path = find_path(dungeon, adventurer[ENTITY_ROOM_POS], target_room)
+    path = find_path(dungeon, adventurer[T_BASE_ENTITY_ROOM_POS], target_room)
     return len(path) != 0
 
 def find_meanest_dragon(dungeon: DungeonT, adventurer: AdventurerT, dragons: list[DragonT]) -> DragonT:
@@ -90,10 +90,10 @@ def find_meanest_dragon(dungeon: DungeonT, adventurer: AdventurerT, dragons: lis
 
     for dragon in dragons : 
         # skip unacessible dragons
-        if not room_is_accessible(dungeon, adventurer, dragon[ENTITY_ROOM_POS]): 
+        if not room_is_accessible(dungeon, adventurer, dragon[T_BASE_ENTITY_ROOM_POS]): 
             continue
 
-        if meanest_dragon[ENTITY_LEVEL] < dragon[ENTITY_LEVEL] :
+        if meanest_dragon[T_ENTITY_LEVEL] < dragon[T_ENTITY_LEVEL] :
             meanest_dragon = dragon 
             
     return meanest_dragon
@@ -102,7 +102,7 @@ def path_stop_at_collision(entities: EntitiesT, path: MovementPathT) -> Movement
     """
     returns: path stopped after first collisions with entity
     """
-    entities_positions: set = get_entities_positions(entities)
+    entities_positions: set = get_collision_entities_positions(entities)
 
     new_path = []
     for room_pos in path:
@@ -115,38 +115,68 @@ def path_stop_at_collision(entities: EntitiesT, path: MovementPathT) -> Movement
     return new_path
 
 def find_and_set_adventurer_path(game_data: GameDataT):
-    dungeon = game_data[GAME_DATA_DUNGEON]
-    adventurer = game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
-    dragons = game_data[GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
-    treasure = game_data[GAME_DATA_ENTITIES][ENTITIES_TREASURE]
+    dungeon = game_data[T_GAME_DATA_DUNGEON]
+    adventurer = game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER]
+    dragons = game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_DRAGONS]
+    treasure = game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_TREASURE]
 
     target_room = None
 
     # if treasure is in dungeon and accesible, then go to treasure
-    if treasure_is_valid(treasure) and room_is_accessible(dungeon, adventurer, treasure[ENTITY_ROOM_POS]):
-        target_room = treasure[ENTITY_ROOM_POS]
+    if treasure_is_valid(treasure) and room_is_accessible(dungeon, adventurer, treasure[T_BASE_ENTITY_ROOM_POS]):
+        target_room = treasure[T_BASE_ENTITY_ROOM_POS]
     # otherwise go to dragon
     else : 
         target_dragon = find_meanest_dragon(dungeon, adventurer, dragons)
-        target_room = target_dragon[ENTITY_ROOM_POS]    
+        target_room = target_dragon[T_BASE_ENTITY_ROOM_POS]    
         
     # If a target is found, calculate the path
     if target_room != None:
-        path = find_path(dungeon, adventurer[ENTITY_ROOM_POS], target_room)
+        path = find_path(dungeon, adventurer[T_BASE_ENTITY_ROOM_POS], target_room)
 
         # if another entity on path, stop path there
-        path = path_stop_at_collision(game_data[GAME_DATA_ENTITIES], path)
+        path = path_stop_at_collision(game_data[T_GAME_DATA_ENTITIES], path)
 
         # set new calculated path in adventurer
         if path:
-            adventurer[ADVENTURER_PATH] = path
+            adventurer[T_ADVENTURER_PATH] = path
             return 
 
     # if dragon not found, or path not found, empty path
-    adventurer[ADVENTURER_PATH] = MovementPathT()
+    adventurer[T_ADVENTURER_PATH] = MovementPathT()
 
-def do_adventurer_path(adventurer: AdventurerT):
+def pickup_items(items: list[EntityItemT], adventurer: AdventurerT, room_pos: RoomPosT):
+    """
+    if any items is in room_poos then it will pick it up and place it in inventory
+    """
+    picked_up_item_idxs: list[int] = list()
+
+    for i in range(len(items)):
+        item: list = items[i]
+        if item[T_ENTITY_ITEM_DATA][T_BASE_ENTITY_ROOM_POS] == room_pos:
+            log_debug_full(f"found item in current room: {room_pos}")
+            
+            # no data for now, we just know that we have that item, no item specific info
+            inventory_item = inventory_item_create(item[T_ENTITY_ITEM_TYPE], None)
+
+            # add item to inventory
+            adventurer_inventory_add_item(adventurer, inventory_item)
+
+            # remove it from items
+            picked_up_item_idxs.append(i)
+
+    # remove picked up items from items list
+    for i in picked_up_item_idxs:
+        items.pop(i)
+
+def do_adventurer_path(adventurer: AdventurerT, entities: EntitiesT):
     # Adventurer movement.
-    movement_path = adventurer[ADVENTURER_PATH]
-    if isinstance(movement_path, list) and len(movement_path) > 0:
-        adventurer[ENTITY_ROOM_POS] = movement_path[-1]
+    movement_path: list = adventurer[T_ADVENTURER_PATH]
+    if not movement_path_is_valid(movement_path):
+        return
+
+    for current_room_pos in movement_path:
+        # pick up items if there are any in current room
+        pickup_items(entities[T_ENTITIES_ITEMS], adventurer, current_room_pos)
+
+        adventurer[T_BASE_ENTITY_ROOM_POS] = current_room_pos

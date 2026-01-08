@@ -1,3 +1,5 @@
+from src.engine.structs.entities import *
+from src.engine.structs.adventurer import *
 from src.engine.structs.hud_element import *
 
 from src.game.game_definitions import *
@@ -20,7 +22,8 @@ def _add_hud_element(hud_elements: list[HudElementT],
     return gui_geom.calculate_text_size(text)[1]
 
 def get_hud_elements(game_context: GameContextT) -> list[HudElementT]:
-    game_data: GameDataT = game_context[GAME_CONTEXT_GAME_DATA]
+    game_data: GameDataT = game_context[T_GAME_CONTEXT_GAME_DATA]
+    adventurer: AdventurerT = game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER]
     hud_elements: list[HudElementT] = []
 
     Y_PAD = 6
@@ -31,17 +34,32 @@ def get_hud_elements(game_context: GameContextT) -> list[HudElementT]:
     bottom_left_offset_y = 0
 
     # game state info
-    text = get_game_state_text(game_context[GAME_CONTEXT_GAME_STATE])
+    text = get_game_state_text(game_context[T_GAME_CONTEXT_GAME_STATE])
     el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_TOP_LEFT, text, "lime", top_left_offset_y)
     top_left_offset_y += el_height + Y_PAD
 
+    # liste d'items
+    inventory: list = game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER][T_ADVENTURER_INVENTORY]
+    items: dict = adventurer_inventory_get_item_counts(adventurer)
+    fmt_fn = lambda d: ', '.join(f'{k} (x{v})' for k, v in d.items())
+    text = f"items: {fmt_fn(items) if len(items) > 0 else 'aucun'}"
+    el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_BOTTOM_RIGHT, text, "white", bottom_right_offset_y)
+    bottom_right_offset_y -= el_height - Y_PAD
+
+    # treasures left to place
+    text = f"trésors restants: {game_data[T_GAME_DATA_TREASURE_COUNT]}"
+    el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_BOTTOM_RIGHT, text, "white", bottom_right_offset_y)
+    bottom_right_offset_y -= el_height - Y_PAD
+
     # indicate game mode
-    text = f"Mode de jeu: {get_game_mode_text(game_data[GAME_DATA_GAME_MODE])}"
-    el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_BOTTOM_LEFT, text, "yellow", bottom_left_offset_y)
+    game_mode: GameModeE = game_data[T_GAME_DATA_GAME_MODE]
+    text = f"Mode de jeu: {get_game_mode_text(game_mode)}"
+    color = "red" if game_mode == E_GAME_MODE_EXTREME else "yellow"
+    el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_BOTTOM_LEFT, text, color, bottom_left_offset_y)
     bottom_left_offset_y -= el_height - Y_PAD
 
     # indicate which round we're on
-    text = f"Tour: {game_data[GAME_DATA_ROUND]}"
+    text = f"Tour: {game_data[T_GAME_DATA_ROUND]}"
     el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_TOP_LEFT, text, "white", top_left_offset_y)
     top_left_offset_y += el_height + Y_PAD
 

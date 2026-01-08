@@ -5,6 +5,7 @@ from libs.fltk import FltkEvent, TkEvent
 
 import src.engine.game_logic as game_logic
 import src.engine.parsing as parsing
+from src.engine.structs.entities import *
 from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
@@ -39,16 +40,16 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
 
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
         # if no dungeon selected ignore event
-        if game_event[GAME_EVENT_DATA] == None:
+        if game_event[T_GAME_EVENT_DATA] == None:
             return
 
-        loaded_game: GameDataT = game_event[GAME_EVENT_DATA]
-        log_trace(f"loaded game, dungeon: {loaded_game[GAME_DATA_DUNGEON]=}")
-        log_trace(f"loaded game, adve: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]=}")
-        log_trace(f"loaded game, dragons: {loaded_game[GAME_DATA_ENTITIES][ENTITIES_DRAGONS]=}")
+        loaded_game: GameDataT = game_event[T_GAME_EVENT_DATA]
+        log_trace(f"loaded game, dungeon: {loaded_game[T_GAME_DATA_DUNGEON]=}")
+        log_trace(f"loaded game, adve: {loaded_game[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER]=}")
+        log_trace(f"loaded game, dragons: {loaded_game[T_GAME_DATA_ENTITIES][T_ENTITIES_DRAGONS]=}")
         game_logic.load_game_data(game_context, loaded_game)
 
-        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+        game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
 
 def handle_game_event(game_event: GameEventT, game_context: GameContextT):
     event_info = event_get_info(game_event)
@@ -60,7 +61,7 @@ def handle_game_event(game_event: GameEventT, game_context: GameContextT):
         game_logic.reset_game_data(game_context)
 
         # set turn to dungeon
-        game_context[GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+        game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
     # save game
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_S:
         parsing.save_game(game_context)
@@ -94,31 +95,30 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
     # rotate room
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
         game_logic.rotate_room(event_info, game_context)
+    # place treasure
+    elif event_info[EVENT_INFO_TYPE] == KEY_X2:
+        # log_debug(f"game data: {game_context[GAME_CONTEXT_GAME_DATA]}")
+
+        # skip if no more treasures left
+        treasure_count = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_TREASURE_COUNT]
+        if treasure_count <= 0:
+            return
+
+        dungeon: DungeonT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_DUNGEON]
+        entities: EntitiesT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_ENTITIES]
+
+        successfuly_placed = game_logic.place_treasure(event_info, dungeon, entities)
+        if successfuly_placed:
+            game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_TREASURE_COUNT] -= 1
     # finish turning rooms and stuff
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         # execute dungeon turn
         game_logic.do_dungeon_turn(game_context)
 
         # move dragons
-        dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
-        entities: EntitiesT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES]
+        dungeon: DungeonT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_DUNGEON]
+        entities: EntitiesT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_ENTITIES]
         game_logic.move_dragons_randomly(dungeon, entities)
-    # place treasure
-    elif event_info[EVENT_INFO_TYPE] == KEY_X2:
-        treasure_count = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT]
-        log_debug_full(f"treasure count: {treasure_count}")
-
-        dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
-        entities: EntitiesT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES]
-
-        # skip if no more treasures left
-        treasure_count = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT]
-        if treasure_count <= 0:
-            return
-
-        successfuly_placed = game_logic.place_treasure(event_info, dungeon, entities)
-        if successfuly_placed:
-            game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_TREASURE_COUNT] -= 1
 
 def handle_game_player_event(game_event: GameEventT, game_context: GameContextT):
     event_info = event_get_info(game_event)
@@ -138,7 +138,7 @@ def handle_game_player_event(game_event: GameEventT, game_context: GameContextT)
 
 def handle_game_finish(game_context: GameContextT):
     fltk.attend_ev()
-    game_context[GAME_CONTEXT_GAME_STATE] = STATE_EXIT
+    game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_EXIT
 
 def handle_event(game_event: GameEventT, game_context: GameContextT):
     """
@@ -151,10 +151,10 @@ def handle_event(game_event: GameEventT, game_context: GameContextT):
         game_event (GameEventT): The event to handle.
         game_context (GameContextT): The state of the game.
     """
-    game_state = game_context[GAME_CONTEXT_GAME_STATE]
+    game_state = game_context[T_GAME_CONTEXT_GAME_STATE]
 
     if fltk.touche_pressee(EXIT_KEY):
-        game_context[GAME_CONTEXT_GAME_STATE] = STATE_EXIT
+        game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_EXIT
         return
 
     log_trace(f"game state: {game_state}")

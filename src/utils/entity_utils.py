@@ -1,15 +1,24 @@
 from src.engine.structs.entity import *
+from src.engine.structs.entities import *
 from src.engine.structs.treasure import *
 
-def get_entities_positions(entities: EntitiesT):
+def get_collision_entities_positions(entities: EntitiesT):
     """
     returns: a set of RoomPosT, of all positions of entities in entities list
     """
-    entities_positions = [dragon[ENTITY_ROOM_POS] for dragon in entities[ENTITIES_DRAGONS]]
-    entities_positions.append(entities[ENTITIES_ADVENTURER][ENTITY_ROOM_POS]) # adventurer
+    # entities to skip bcs cant collid or handle seperatly
+    ENTITIES_TO_SKIP = { T_ENTITIES_DRAGONS, T_ENTITIES_ITEMS }
 
-    treasure = entities[ENTITIES_TREASURE]
-    if treasure_is_valid(treasure):
-        entities_positions.append(treasure[TREASURE_ROOM_POS]) # treasure
+    # init with dragons positions first
+    entities_positions = [dragon[T_BASE_ENTITY_ROOM_POS] for dragon in entities[T_ENTITIES_DRAGONS]]
+
+    # other single ents
+    for entity_type, entity in enumerate(entities):
+        if entity_type in ENTITIES_TO_SKIP:
+            continue
+
+        # check if valid ent and not just empty ent
+        if isinstance(entity, list) and len(entity) >= T_BASE_ENTITY_COUNT:
+            entities_positions.append(entity[T_BASE_ENTITY_ROOM_POS]) # adventurer
 
     return entities_positions
