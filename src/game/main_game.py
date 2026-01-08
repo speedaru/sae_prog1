@@ -15,6 +15,7 @@ from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 from src.engine.structs.treasure import *
+from src.engine.structs.strong_sword import *
 from src.engine.parsing import *
 
 import src.game.gui as gui
@@ -53,40 +54,21 @@ def render_game(game_context: GameContextT):
     Args:
         game_context (GameContextT): The global game context.
     """
-    assets: AssetsT = game_context[GAME_CONTEXT_ASSETS]
+    assets: AssetsT = game_context[T_GAME_CONTEXT_ASSETS]
+    game_data: GameDataT = game_context[T_GAME_CONTEXT_GAME_DATA]
+    entities: EntitiesT = game_data[T_GAME_DATA_ENTITIES]
 
-    dungeon: DungeonT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_DUNGEON]
-    adventurer: AdventurerT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]
-    dragons: list[DragonT] = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_DRAGONS]
-    treasure: TreasureT = game_context[GAME_CONTEXT_GAME_DATA][GAME_DATA_ENTITIES][ENTITIES_TREASURE]
+    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
 
     # render dungeon
-    if dungeon != None:
+    if dungeon:
         log_debug_full("rendering dungeon: {dungeon_get_width(dungeon)}x{dungeon_get_height(dungeon)}")
         dungeon_render(dungeon, assets)
-    else:
-        log_error("cant render dungeon because dungeon is None")
 
-    # render adventurer
-    if adventurer != None:
-        log_debug_full(f"rendering adventurer: level: room_pos: {adventurer[ENTITY_ROOM_POS]} {adventurer[ENTITY_LEVEL]}")
-        adventurer_render(adventurer, assets)
-        adventurer_render_path(adventurer)
-    else:
-        log_error("cant render adventurer because adventurer is None")
-
-    # render dragons
-    if dragons != None:
-        log_debug_full(f"rendering dragons: {dragons}")
-        for dragon in dragons:
-            dragon_render(dragon, assets)
-    else:
-        log_error("cant render dragons because dragons is None")
-
-    # render treasure
-    if treasure != None:
-        log_debug_full(f"rendering treasure: {treasure}")
-        treasure_render(treasure, assets)
+    # render entities
+    if entities:
+        log_debug_full("rendering entities . . .")
+        entities_render(entities, assets)
 
     # render hud
     hud_elements = hud.get_hud_elements(game_context)
@@ -94,7 +76,7 @@ def render_game(game_context: GameContextT):
 
 def render_game_end(game_context: GameContextT):
     GAME_END_MESSAGE_FONT_SIZE = 48
-    game_state: GameStateT = game_context[GAME_CONTEXT_GAME_STATE]
+    game_state: GameStateT = game_context[T_GAME_CONTEXT_GAME_STATE]
 
     message = ""
     message_color = ""
@@ -130,7 +112,7 @@ def render(game_context: GameContextT) -> GameEventDataT:
         GameEventDataT: Any data resulting from the render step (e.g., selected dungeon),
                         passed back to the event handler.
     """
-    game_state = game_context[GAME_CONTEXT_GAME_STATE]
+    game_state = game_context[T_GAME_CONTEXT_GAME_STATE]
 
     event_data: GameEventDataT = None
 
@@ -149,7 +131,7 @@ def render(game_context: GameContextT) -> GameEventDataT:
     return event_data
 
 def handle_logic(game_context: GameContextT):
-    game_state: GameStateT = game_context[GAME_CONTEXT_GAME_STATE]
+    game_state: GameStateT = game_context[T_GAME_CONTEXT_GAME_STATE]
 
     if game_state == STATE_GAME_TURN_PLAYER or game_state == STATE_GAME_TURN_DUNGEON:
         # handle collisions between adventurer and dragons and treasure
@@ -188,14 +170,14 @@ def main_loop():
         assets = asset_manager_init()
 
     # init game event
-    game_event: GameEventT | NoneType = [None] * GAME_EVENT_COUNT
+    game_event: GameEventT | NoneType = [None] * T_GAME_EVENT_COUNT
 
     # init game context
-    game_context[GAME_CONTEXT_ASSETS] = assets
-    game_context[GAME_CONTEXT_GAME_STATE] = game_state
-    game_context[GAME_CONTEXT_EVENT] = game_event
-    game_context[GAME_CONTEXT_GAME_DATA] = game_data_init()
-    game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA] = game_data_init()
+    game_context[T_GAME_CONTEXT_ASSETS] = assets
+    game_context[T_GAME_CONTEXT_GAME_STATE] = game_state
+    game_context[T_GAME_CONTEXT_EVENT] = game_event
+    game_context[T_GAME_CONTEXT_GAME_DATA] = game_data_init()
+    game_context[T_GAME_CONTEXT_ORIGINAL_GAME_DATA] = game_data_init()
 
     while True:
         # handle fps cap and delta time
@@ -205,7 +187,7 @@ def main_loop():
 
         # get event
         event_type: FltkEvent | NoneType = fltk.donne_ev()
-        game_event[GAME_EVENT_TYPE] = event_type
+        game_event[T_GAME_EVENT_TYPE] = event_type
 
         # render
         # pass event to render function so it can send back event_data
@@ -215,8 +197,7 @@ def main_loop():
 
         # handle event only if there is event to handle
         if event_type != None or event_data != None:
-        # if event_type != None:
-            game_event[GAME_EVENT_DATA] = event_data
+            game_event[T_GAME_EVENT_DATA] = event_data
 
             event_handler.handle_event(game_event, game_context)
 
@@ -224,7 +205,7 @@ def main_loop():
         handle_logic(game_context)
 
         # end game
-        if game_context[GAME_CONTEXT_GAME_STATE] == STATE_EXIT:
+        if game_context[T_GAME_CONTEXT_GAME_STATE] == STATE_EXIT:
             break
 
         fps_manager.sleep_to_cap_fps(dt)

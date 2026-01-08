@@ -10,11 +10,11 @@ import src.utils.fltk_extensions as fltk_ext
 from src.utils.logging import *
 
 
-# types
+# BaseEntityT -> EntityT -> DragonT
 DragonT = list[RoomPosT | int]
 
-# enum for dragon structure that inherits from entity
-DRAGON_COUNT = ENTITY_COUNT
+# enum for dragon struct
+T_DRAGON_COUNT = T_ENTITY_COUNT
 
 
 def dragon_init(dragon: DragonT, level: int = 1, room_pos: RoomPosT = (0, 0)):
@@ -39,7 +39,7 @@ def dragon_init(dragon: DragonT, level: int = 1, room_pos: RoomPosT = (0, 0)):
     5
     """
     # room_pos = [randrange(0, 6), randrange(0, 6)]
-    entity_init(dragon, level, room_pos, DRAGON_COUNT)
+    entity_init(dragon, level, room_pos, T_DRAGON_COUNT)
 
 def dragon_render(dragon: DragonT, assets: AssetsT):
     """
@@ -48,7 +48,7 @@ def dragon_render(dragon: DragonT, assets: AssetsT):
     Retrieves the dragon image from the asset manager and uses `entity_render`
     to draw it at the correct position relative to the room.
     """
-    dragon_image = assets[ASSETS_CHARACTERS][CHARACTERS_DRAGONS]
+    dragon_image = assets[T_ASSETS_CHARACTERS][CHARACTERS_DRAGONS]
 
     entity_render(dragon, dragon_image)
 

@@ -21,7 +21,7 @@ EVENT_INFO_COUNT = 4
 def event_get_info(game_event: GameEventT) -> EventInfoT:
     event_info: EventInfoT = [None] * EVENT_INFO_COUNT
 
-    event_info[EVENT_INFO_EV] = game_event[GAME_EVENT_TYPE]
+    event_info[EVENT_INFO_EV] = game_event[T_GAME_EVENT_TYPE]
     event_info[EVENT_INFO_TYPE] = fltk.type_ev(event_info[EVENT_INFO_EV])
     if event_info[EVENT_INFO_TYPE] == None:
         return event_info

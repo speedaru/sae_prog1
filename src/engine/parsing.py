@@ -6,9 +6,10 @@ from src.config import *
 
 from src.game.game_definitions import *
 
-import src.engine.game_logic as game_logic
+# import src.engine.game_logic as game_logic
 from src.engine.structs.dungeon import *
 from src.engine.structs.entity import *
+from src.engine.structs.entities import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 
@@ -25,11 +26,11 @@ ROOM_REPS = set().union(ROOM_REPR4, ROOM_REPR3, ROOM_REPR2_ADJ, ROOM_REPR2_OPP, 
 
 _EntityTypeValueT = tuple[int, Any]
 
-_SimpleGameContextT = list[int | GameDataT]
-_SIMPLE_GAME_CONTEXT_GAME_STATE = 0
-_SIMPLE_GAME_CONTEXT_GAME_DATA = 1
-_SIMPLE_GAME_CONTEXT_ORIGINAL_GAME_DATA = 2
-_SIMPLE_GAME_CONTEXT_COUNT = 3
+_SimpleGameCtxT = list[int | GameDataT]
+_T_SIMPLE_GAME_CTX_GAME_STATE = 0
+_T_SIMPLE_GAME_CTX_GAME_DATA = 1
+_T_SIMPLE_GAME_CTX_ORIGINAL_GAME_DATA = 2
+_T_SIMPLE_GAME_CTX_COUNT = 3
 
 
 def dungeon_ascii_to_room(ascii_room: str) -> RoomT:
@@ -101,6 +102,18 @@ def _entity_get_field(fields: list[str], field_idx: int) -> str | NoneType:
 
     return fields[field_idx]
 
+def _fields_get_room_pos(fields: list[str]) -> RoomPosT | NoneType:
+    FIELD_POS_ROW = 1
+    FIELD_POS_COL = 2
+    row, col = _entity_get_field(fields, FIELD_POS_ROW), _entity_get_field(fields, FIELD_POS_COL)
+    if not row or not col:
+        log_error(f"fields get room pos parsing: failed to get room position from fields: {fields}")
+        return None
+
+    # convert fields to int
+    row, col = int(row), int(col)
+    return room_pos_create(row=row, col=col)
+
 def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
     unknown_ent = (E_ENTITY_UNKNOWN, None)
 
@@ -114,38 +127,34 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
         return unknown_ent
 
     entity_type = ENTITY_CHARS[entity_type_ch]
-    # handle adventurer and dragon together at first
-    if entity_type == E_ENTITY_ADVENTURER or entity_type == E_ENTITY_DRAGON:
-        FIELD_POS_ROW = 1
-        FIELD_POS_COL = 2
-        row, col = _entity_get_field(entity_fields, FIELD_POS_ROW), _entity_get_field(entity_fields, FIELD_POS_COL)
-        if isinstance(row, NoneType) or isinstance(col, NoneType):
-            log_error(f"Adventurer parsing: failed to get room position from fields: {entity_fields}")
+    if entity_type == E_ENTITY_ADVENTURER:
+        room_pos_res: RoomPosT | NoneType = _fields_get_room_pos(entity_fields)
+        if not room_pos_res:
+            return unknown_ent
+
+        # create adventurer
+        adventurer: AdventurerT = AdventurerT()
+        adventurer_init(adventurer, room_pos=room_pos_res)
+        return (entity_type, adventurer)
+    elif entity_type == E_ENTITY_DRAGON:
+        # get room pos
+        room_pos_res: RoomPosT | NoneType = _fields_get_room_pos(entity_fields)
+        if not room_pos_res:
+            return unknown_ent
+
+        # get level
+        FIELD_LEVEL = 3
+        level = _entity_get_field(entity_fields, FIELD_LEVEL)
+        if not level:
             return unknown_ent
 
         # convert fields to int
-        row, col = int(row), int(col)
+        level = int(level)
 
-        # now handle adventurer and dragon separatly
-        if entity_type == E_ENTITY_ADVENTURER:
-            # create adventurer
-            adventurer: AdventurerT = AdventurerT()
-            adventurer_init(adventurer, room_pos=room_pos_create(row=row, col=col))
-            return (entity_type, adventurer)
-        elif entity_type == E_ENTITY_DRAGON:
-            FIELD_LEVEL = 3
-            level = _entity_get_field(entity_fields, FIELD_LEVEL)
-            if isinstance(level, NoneType):
-                log_error(f"Dragon parsing: failed to get level from fields: {entity_fields}")
-                return unknown_ent
-
-            # convert fields to int
-            level = int(level)
-
-            # create dragon
-            dragon: DragonT = DragonT()
-            dragon_init(dragon, level=level, room_pos=room_pos_create(row=row, col=col))
-            return (entity_type, dragon)
+        # create dragon
+        dragon: DragonT = DragonT()
+        dragon_init(dragon, level=level, room_pos=room_pos_res)
+        return (entity_type, dragon)
     elif entity_type == E_ENTITY_TREASURE:
         FIELD_TREASURE_COUNT = 1
         count = _entity_get_field(entity_fields, FIELD_TREASURE_COUNT)
@@ -154,6 +163,13 @@ def parse_entity(entity_fields: list[str]) -> _EntityTypeValueT:
             return unknown_ent
 
         return (entity_type, int(count))
+    elif entity_type == E_ENTITY_STRONG_SWORD:
+        room_pos_res: RoomPosT | NoneType = _fields_get_room_pos(entity_fields)
+        if not room_pos_res:
+            return unknown_ent
+
+        # create strong sword
+        return (entity_type, strong_sword_create(room_pos_res))
 
     return (E_ENTITY_UNKNOWN, None)
 
@@ -180,10 +196,7 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
         else:
             log_error(f"failed to parse file, unrecognized line: {line}")
 
-    dungeon: DungeonT = game_data[GAME_DATA_DUNGEON]
-    # adventurer: AdventurerT = game_context[GAME_CONTEXT_ADVENTURER]
-    # dragons: list[DragonT] = game_context[GAME_CONTEXT_DRAGONS]
-    # dragons[:] = [] # reset dragons list
+    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
 
     log_debug(f"dungeon lines: {dungeon_lines=}")
     log_debug(f"entity lines: {entities_lines=}")
@@ -203,18 +216,22 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
             continue
 
         if entity_type == E_ENTITY_ADVENTURER:
-            game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER] = entity
-            log_debug_full(f"loaded adventurer: {game_data[GAME_DATA_ENTITIES][ENTITIES_ADVENTURER]}")
+            game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER] = entity
+            log_debug_full(f"loaded adventurer: {game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER]}")
         elif entity_type == E_ENTITY_DRAGON:
             dragons.append(entity)
         elif entity_type == E_ENTITY_TREASURE:
             log_debug_full(f"found treasure count: {entity}")
-            game_data[GAME_DATA_TREASURE_COUNT] = entity
+            game_data[T_GAME_DATA_TREASURE_COUNT] = entity
+        elif entity_type in E_ENTITY_ITEMS: # any entity item
+            entity_item = entity_item_create(entity_type, entity)
+            game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ITEMS].append(entity_item)
+            log_debug_full(f"loaded entity item: {entity_type}")
 
     # game_logic.load_dragons(game_data, dragons)
-    game_data[GAME_DATA_ENTITIES][ENTITIES_DRAGONS] = dragons
+    game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_DRAGONS] = dragons
 
-    log_debug_full(f"loaded dungeon: {game_data[GAME_DATA_DUNGEON]}")
+    log_debug_full(f"loaded dungeon: {game_data[T_GAME_DATA_DUNGEON]}")
     return True
 
 def _to_json_safe(obj) -> str:
@@ -239,10 +256,10 @@ def _from_json_safe(obj):
         return obj
 
 def serialize_game_context(game_context: GameContextT) -> str:
-    simple_game_context: list = [_SimpleGameContextT()] * _SIMPLE_GAME_CONTEXT_COUNT
-    simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_STATE] = game_context[GAME_CONTEXT_GAME_STATE]
-    simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_DATA] = game_context[GAME_CONTEXT_GAME_DATA]
-    simple_game_context[_SIMPLE_GAME_CONTEXT_ORIGINAL_GAME_DATA] = game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA]
+    simple_game_context: list = [_SimpleGameCtxT()] * _T_SIMPLE_GAME_CTX_COUNT
+    simple_game_context[_T_SIMPLE_GAME_CTX_GAME_STATE] = game_context[T_GAME_CONTEXT_GAME_STATE]
+    simple_game_context[_T_SIMPLE_GAME_CTX_GAME_DATA] = game_context[T_GAME_CONTEXT_GAME_DATA]
+    simple_game_context[_T_SIMPLE_GAME_CTX_ORIGINAL_GAME_DATA] = game_context[T_GAME_CONTEXT_ORIGINAL_GAME_DATA]
 
     ret = _to_json_safe(simple_game_context)
     log_debug_full(f"serialized:\n{ret}")
@@ -252,9 +269,9 @@ def serialize_game_context(game_context: GameContextT) -> str:
 def deserialize_game_context(game_context: GameContextT, serialized_data: str):
     deserialized_simple_game_context = _from_json_safe(json.loads(serialized_data))
 
-    game_context[GAME_CONTEXT_GAME_STATE] = deserialized_simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_STATE]
-    game_context[GAME_CONTEXT_GAME_DATA][:] = deserialized_simple_game_context[_SIMPLE_GAME_CONTEXT_GAME_DATA]
-    game_context[GAME_CONTEXT_ORIGINAL_GAME_DATA][:] = deserialized_simple_game_context[_SIMPLE_GAME_CONTEXT_ORIGINAL_GAME_DATA]
+    game_context[T_GAME_CONTEXT_GAME_STATE] = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_GAME_STATE]
+    game_context[T_GAME_CONTEXT_GAME_DATA][:] = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_GAME_DATA]
+    game_context[T_GAME_CONTEXT_ORIGINAL_GAME_DATA][:] = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_ORIGINAL_GAME_DATA]
 
 def save_game(game_context: GameContextT):
     """
