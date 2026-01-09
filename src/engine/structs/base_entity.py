@@ -1,24 +1,37 @@
 from src.engine.structs.dungeon import *
 
+from src.game.entity_definitions import *
+
+
 # base class for all entities
-BaseEntityT = list[RoomPosT]
+BaseEntityT = list[RoomPosT | EntityE | NoneType]
 
 # enum for base entity struct
-T_BASE_ENTITY_ROOM_POS = 0
-T_BASE_ENTITY_COUNT = 1
+T_BASE_ENTITY_TYPE = 0 # entity type like E_ENTITY_DRAGON
+T_BASE_ENTITY_ROOM_POS = 1
+T_BASE_ENTITY_COUNT = 2
 
-def base_entity_create(room_pos: RoomPosT = (0, 0), base_entity_size: int = T_BASE_ENTITY_COUNT) -> BaseEntityT:
-    base_entity: BaseEntityT = [room_pos_create(0, 0)] * base_entity_size
+def base_entity_create(entity_type: EntityE = E_ENTITY_UNKNOWN,
+                       room_pos: RoomPosT = (0, 0),
+                       size: int = T_BASE_ENTITY_COUNT) -> BaseEntityT:
+    """
+    fills extra empty spaces with None
+    size: num of properties in entity to init
+    """
+    base_entity: BaseEntityT = [None] * size
 
+    base_entity[T_BASE_ENTITY_TYPE] = entity_type
     base_entity[T_BASE_ENTITY_ROOM_POS] = room_pos
+
+    if entity_type == E_ENTITY_UNKNOWN:
+        log_warning(f"[base_entity_create] created unknown entity: {base_entity}")
+    else:
+        log_debug(f"[base_entity_create] created entity of type: {entity_type}")
 
     return base_entity
 
-def base_entity_init(base_entity: BaseEntityT, room_pos: RoomPosT = (0, 0), base_entity_size: int = T_BASE_ENTITY_COUNT):
-    if len(base_entity) != base_entity_size:
-        base_entity[:] = [room_pos_create(0, 0)] * base_entity_size
-
-    base_entity[T_BASE_ENTITY_ROOM_POS] = room_pos
+def base_entity_is(base_entity, entity_type: EntityE) -> bool:
+    return base_entity[T_BASE_ENTITY_TYPE] == entity_type
 
 def base_entity_render(base_entity: BaseEntityT, image) -> tuple[int, int]:
     """
@@ -36,6 +49,5 @@ def base_entity_render(base_entity: BaseEntityT, image) -> tuple[int, int]:
     draw_y += (room_size[1] // 2) - (CHARACTERS_SIZES[1] // 2)
 
     # draw entity
-    log_debug_full(f"[base entity] (draw_x, draw_y): {(draw_x, draw_y)}")
     fltk_ext.image_memoire(draw_x, draw_y, image, ancrage="nw")
     return (draw_x, draw_y)

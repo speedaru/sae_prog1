@@ -9,8 +9,9 @@ from src.utils.logging import log_release, log_debug, log_debug_full
 
 import src.engine.engine_config as engine_config
 import src.engine.fps_manager as fps_manager
-import src.engine.game_logic as game_logic
+import src.game.logic as logic
 from src.engine.asset_manager import *
+from src.engine.fps_manager import T_FPS_MANAGER_LAST_FRAME_TIME, T_FPS_MANAGER_CURRENT_FRAME_TIME
 from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
@@ -54,9 +55,9 @@ def render_game(game_context: GameContextT):
     Args:
         game_context (GameContextT): The global game context.
     """
-    assets: AssetsT = game_context[T_GAME_CONTEXT_ASSETS]
-    game_data: GameDataT = game_context[T_GAME_CONTEXT_GAME_DATA]
-    entities: EntitiesT = game_data[T_GAME_DATA_ENTITIES]
+    assets: AssetsT = game_context[T_GAME_CTX_ASSETS]
+    game_data: GameDataT = game_context[T_GAME_CTX_GAME_DATA]
+    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
 
     dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
 
@@ -66,9 +67,9 @@ def render_game(game_context: GameContextT):
         dungeon_render(dungeon, assets)
 
     # render entities
-    if entities:
+    if entity_system != None:
         log_debug_full("rendering entities . . .")
-        entities_render(entities, assets)
+        entity_system_render(entity_system, assets)
 
     # render hud
     hud_elements = hud.get_hud_elements(game_context)
@@ -76,21 +77,21 @@ def render_game(game_context: GameContextT):
 
 def render_game_end(game_context: GameContextT):
     GAME_END_MESSAGE_FONT_SIZE = 48
-    game_state: GameStateT = game_context[T_GAME_CONTEXT_GAME_STATE]
+    game_state: GameFlags = game_context[T_GAME_CTX_GAME_FLAGS]
 
     message = ""
     message_color = ""
-    if game_state == STATE_GAME_DONE_WON:
+    if game_state & F_GAME_GAME_WON:
         message = "Partie gagnée !"
         message_color = "lime"
-    elif game_state == STATE_GAME_DONE_LOST:
+    elif game_state & F_GAME_GAME_LOST:
         message = "Partie perdue"
         message_color = "red"
 
     message_size = fltk.taille_texte(message, taille=GAME_END_MESSAGE_FONT_SIZE)
     message_size = fltk.taille_texte(message, taille=GAME_END_MESSAGE_FONT_SIZE)
     center_x, center_y = (WINDOW_SIZE[0] / 2) - (message_size[0] / 2), (WINDOW_SIZE[1] / 2) - (message_size[1] / 2)
-    fltk.texte(center_x, center_y, message, couleur=message_color, taille=GAME_END_MESSAGE_FONT_SIZE)
+    fltk.texte(center_x, center_y - 50, message, couleur=message_color, taille=GAME_END_MESSAGE_FONT_SIZE)
 
     # so it calls event handler to then update game state to STATE_EXIT
     return game_state
@@ -112,53 +113,30 @@ def render(game_context: GameContextT) -> GameEventDataT:
         GameEventDataT: Any data resulting from the render step (e.g., selected dungeon),
                         passed back to the event handler.
     """
-    game_state = game_context[T_GAME_CONTEXT_GAME_STATE]
+    game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
 
     event_data: GameEventDataT = None
 
     # if no dungeon selected then render the start_menu, otherwise render the dungeon
-    if game_state == STATE_MENU_START:
+    if game_flags & F_GAME_MENU:
         event_data = render_start_menu(game_context)
-    elif game_state == STATE_GAME_TURN_PLAYER or game_state == STATE_GAME_TURN_DUNGEON:
+    # render game normally
+    elif game_flags & F_GAME_GAME:
         render_game(game_context)
-    # render game end menu if game ended
-    elif game_state == STATE_GAME_DONE_WON or game_state == STATE_GAME_DONE_LOST:
-        event_data = render_game_end(game_context)
-
-    # # render game state info
-    # game_state_render(game_context[GAME_CONTEXT_GAME_STATE])
+        # render game end menu if game ended
+        if game_flags & F_GAME_GAME_FINISHED:
+            event_data = render_game_end(game_context)
 
     return event_data
-
-def handle_logic(game_context: GameContextT):
-    game_state: GameStateT = game_context[T_GAME_CONTEXT_GAME_STATE]
-
-    if game_state == STATE_GAME_TURN_PLAYER or game_state == STATE_GAME_TURN_DUNGEON:
-        # handle collisions between adventurer and dragons and treasure
-        game_logic.do_collisions(game_context)
-
-        # recalculate path every frame so we can see it update live
-        game_logic.auto_update_player_path(game_context)
-
 
 def main_loop():
     """
     The main entry point and loop of the game application.
-
-    Responsibilities:
-    1. Initializes the window, assets, and global game context.
-    2. Runs the infinite game loop.
-    3. Captures FLTK events.
-    4. Calls the `render` pipeline.
-    5. Dispatches events to the `event_handler`.
-    6. Handles the exit condition (Escape key).
     """
-    last_update_time_s = time.time()
+    fps_mgr = fps_manager.fps_manager_create()
 
     # globals
     assets: AssetsT = list()
-    game_state = STATE_MENU_START
-    game_context: GameContextT = game_context_init()
 
     # init stuff
     window_title = "Wall Is You"
@@ -169,25 +147,25 @@ def main_loop():
     if not asset_manager_initialized(assets):
         assets = asset_manager_init()
 
-    # init game event
-    game_event: GameEventT | NoneType = [None] * T_GAME_EVENT_COUNT
-
     # init game context
-    game_context[T_GAME_CONTEXT_ASSETS] = assets
-    game_context[T_GAME_CONTEXT_GAME_STATE] = game_state
-    game_context[T_GAME_CONTEXT_EVENT] = game_event
-    game_context[T_GAME_CONTEXT_GAME_DATA] = game_data_init()
-    game_context[T_GAME_CONTEXT_ORIGINAL_GAME_DATA] = game_data_init()
+    game_context: Any = game_context_create(assets=assets,
+                                            game_flags=GAME_FLAGS_STARTUP_FLAGS,
+                                            event=game_event_create(),
+                                            game_data=game_data_init(),
+                                            original_game_data=game_data_init(),
+                                            fps_manager=fps_mgr)
 
-    while True:
+    # while EXIT_PROGRAM flag is not set
+    while not (game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_EXIT_PROGRAM):
         # handle fps cap and delta time
         ctime = time.time()
-        dt = fps_manager.calculate_delta_time(ctime, last_update_time_s)
-        last_update_time_s = ctime
+        dt = fps_manager.calculate_delta_time(ctime, fps_mgr[T_FPS_MANAGER_LAST_FRAME_TIME])
+        fps_mgr[T_FPS_MANAGER_CURRENT_FRAME_TIME] = ctime
 
-        # get event
-        event_type: FltkEvent | NoneType = fltk.donne_ev()
-        game_event[T_GAME_EVENT_TYPE] = event_type
+        # get event before rendering bcs we might use it in render fn
+        if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
+            event_type: FltkEvent | NoneType = fltk.donne_ev()
+            game_context[T_GAME_CTX_EVENT] = game_event_create(event_type=event_type)    
 
         # render
         # pass event to render function so it can send back event_data
@@ -195,19 +173,17 @@ def main_loop():
         event_data: GameEventDataT = render(game_context)
         gui.render()
 
-        # handle event only if there is event to handle
-        if event_type != None or event_data != None:
-            game_event[T_GAME_EVENT_DATA] = event_data
+        # handle event if there is one
+        if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
+            game_context[T_GAME_CTX_EVENT][T_GAME_EVENT_DATA] = event_data
 
-            event_handler.handle_event(game_event, game_context)
+        # call event handler
+        event_handler.handle_event(game_context)
 
-        # handle specific logic every frame
-        handle_logic(game_context)
+        # handle specific game logic every frame
+        logic.handle_logic(game_context)
 
-        # end game
-        if game_context[T_GAME_CONTEXT_GAME_STATE] == STATE_EXIT:
-            break
-
+        # fps
+        fps_mgr[T_FPS_MANAGER_LAST_FRAME_TIME] = fps_mgr[T_FPS_MANAGER_CURRENT_FRAME_TIME]
         fps_manager.sleep_to_cap_fps(dt)
         log_fps(f"fps: {fps_manager.calculate_fps(dt)}")
-

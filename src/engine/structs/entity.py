@@ -15,43 +15,55 @@ EntityT = list[RoomPosT | int]
 T_ENTITY_LEVEL = T_BASE_ENTITY_COUNT
 T_ENTITY_COUNT = T_BASE_ENTITY_COUNT + 1
 
-def entity_init(entity: EntityT, level: int = 1, room_pos: RoomPosT = (0, 0), entity_size: int = T_ENTITY_COUNT):
-    """
-    Initializes a generic entity (like an adventurer or a dragon).
+# def entity_init(entity: EntityT, level: int = 1, room_pos: RoomPosT = (0, 0), entity_size: int = T_ENTITY_COUNT):
+#     """
+#     Initializes a generic entity (like an adventurer or a dragon).
+#
+#     It sets up the entity structure with a level and a position in the dungeon.
+#     If the list size is incorrect, it resizes it to fit the entity structure.
+#
+#     Args:
+#         entity (EntityT): The list representing the entity (modified in-place).
+#         level (int, optional): The entity's level. Defaults to 1.
+#         room_pos (list[int], optional): The [x, y] position in the dungeon. Defaults to [0, 0].
+#
+#     Doctest :
+#
+#     >>> e = []
+#     >>> # Standard initialization
+#     >>> entity_init(e, level=5, room_pos=(2, 3))
+#     >>> e
+#     [(2, 3), 5]
+#
+#     >>> # Accessing data with constants
+#     >>> e[T_ENTITY_LEVEL]
+#     5
+#     >>> e[T_ENTITY_ROOM_POS]
+#     (2, 3)
+#
+#     >>> # Default initialization
+#     >>> e2 = [None, None]
+#     >>> entity_init(e2)
+#     >>> e2
+#     [(0, 0), 1]
+#     """
+#     base_entity_create()
+#
+#     entity[T_ENTITY_LEVEL] = level
+#     entity[T_BASE_ENTITY_ROOM_POS] = room_pos
 
-    It sets up the entity structure with a level and a position in the dungeon.
-    If the list size is incorrect, it resizes it to fit the entity structure.
+def entity_init():
+    pass
 
-    Args:
-        entity (EntityT): The list representing the entity (modified in-place).
-        level (int, optional): The entity's level. Defaults to 1.
-        room_pos (list[int], optional): The [x, y] position in the dungeon. Defaults to [0, 0].
-
-    Doctest :
-
-    >>> e = []
-    >>> # Standard initialization
-    >>> entity_init(e, level=5, room_pos=(2, 3))
-    >>> e
-    [(2, 3), 5]
-
-    >>> # Accessing data with constants
-    >>> e[T_ENTITY_LEVEL]
-    5
-    >>> e[T_ENTITY_ROOM_POS]
-    (2, 3)
-
-    >>> # Default initialization
-    >>> e2 = [None, None]
-    >>> entity_init(e2)
-    >>> e2
-    [(0, 0), 1]
-    """
-    if len(entity) != entity_size:
-        entity[:] = [None] * entity_size
+def entity_create(entity_type: EntityE = E_ENTITY_UNKNOWN,
+                  room_pos: RoomPosT = room_pos_create(0, 0),
+                  level: int = 1,
+                  entity_size: int = T_ENTITY_COUNT) -> EntityT:
+    entity: list = base_entity_create(entity_type=entity_type, room_pos=room_pos, size=entity_size)
 
     entity[T_ENTITY_LEVEL] = level
-    entity[T_BASE_ENTITY_ROOM_POS] = room_pos
+
+    return entity
 
 def entity_render(entity: EntityT, image):
     """

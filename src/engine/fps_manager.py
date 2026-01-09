@@ -1,6 +1,55 @@
+from io import FileIO
 import time
 
 import src.engine.engine_config as engine_config
+
+
+# to handle time asynchronously between frames
+# otherwise if we sleep 3 seconds, we cant handle any event during the 3 seconds
+FpsManagerT = list[float | bool]
+
+T_FPS_MANAGER_CURRENT_FRAME_TIME = 0
+T_FPS_MANAGER_LAST_FRAME_TIME = 1
+T_FPS_MANAGER_LAST_HANDLED_FRAME = 2
+T_FPS_MANAGER_SLEEP_TARGET = 3
+T_FPS_MANAGER_SLEEPING = 4
+T_FPS_MANAGER_COUNT = 5
+
+def fps_manager_create(current_frame_time: float = 0):
+    if current_frame_time == 0:
+        current_frame_time = time.time()
+
+    fps_manager: FpsManagerT = [None] * T_FPS_MANAGER_COUNT
+
+    fps_manager[T_FPS_MANAGER_CURRENT_FRAME_TIME] = current_frame_time
+    fps_manager[T_FPS_MANAGER_LAST_FRAME_TIME] = current_frame_time
+    fps_manager[T_FPS_MANAGER_LAST_HANDLED_FRAME] = current_frame_time
+    fps_manager[T_FPS_MANAGER_SLEEP_TARGET] = 0.0 # sleep target set at 0, then set manually
+    fps_manager[T_FPS_MANAGER_SLEEPING] = False
+
+    return fps_manager
+
+def fps_manager_is_sleeping(fps_manager: FpsManagerT) -> bool:
+    return fps_manager[T_FPS_MANAGER_SLEEPING]
+
+def fps_manager_slept_enough(fps_manager: FpsManagerT) -> bool:
+    dt = calculate_delta_time(fps_manager[T_FPS_MANAGER_CURRENT_FRAME_TIME], fps_manager[T_FPS_MANAGER_LAST_HANDLED_FRAME])
+    target_dt = fps_manager[T_FPS_MANAGER_SLEEP_TARGET]
+
+    finished_sleep = (dt - target_dt) > 0
+
+    fps_manager[T_FPS_MANAGER_SLEEPING] = not finished_sleep
+    return finished_sleep
+
+def fps_manager_game_sleep(fps_manager: FpsManagerT, time_to_sleep: float):
+    """
+    sleeps asynchronously by not doing game logic if sleeping. but can still handle events
+    """
+    fps_manager[T_FPS_MANAGER_SLEEP_TARGET] = time_to_sleep
+    fps_manager[T_FPS_MANAGER_SLEEPING] = True
+
+def fps_manager_handled_frame(fps_manager: FpsManagerT):
+    fps_manager[T_FPS_MANAGER_LAST_HANDLED_FRAME] = fps_manager[T_FPS_MANAGER_CURRENT_FRAME_TIME]
 
 
 def calculate_delta_time(current_time_s: float, last_update_time_s: float) -> float:

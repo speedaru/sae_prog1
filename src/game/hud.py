@@ -1,4 +1,4 @@
-from src.engine.structs.entities import *
+from src.engine.structs.entity_system import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.hud_element import *
 
@@ -22,8 +22,10 @@ def _add_hud_element(hud_elements: list[HudElementT],
     return gui_geom.calculate_text_size(text)[1]
 
 def get_hud_elements(game_context: GameContextT) -> list[HudElementT]:
-    game_data: GameDataT = game_context[T_GAME_CONTEXT_GAME_DATA]
-    adventurer: AdventurerT = game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER]
+    game_data: GameDataT = game_context[T_GAME_CTX_GAME_DATA]
+    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+
+    adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
     hud_elements: list[HudElementT] = []
 
     Y_PAD = 6
@@ -34,13 +36,13 @@ def get_hud_elements(game_context: GameContextT) -> list[HudElementT]:
     bottom_left_offset_y = 0
 
     # game state info
-    text = get_game_state_text(game_context[T_GAME_CONTEXT_GAME_STATE])
+    text = get_game_state_text(game_context[T_GAME_CTX_GAME_FLAGS])
     el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_TOP_LEFT, text, "lime", top_left_offset_y)
     top_left_offset_y += el_height + Y_PAD
 
     # liste d'items
-    inventory: list = game_data[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER][T_ADVENTURER_INVENTORY]
-    items: dict = adventurer_inventory_get_item_counts(adventurer)
+    inventory: list = adventurer[T_ADVENTURER_INVENTORY]
+    items: dict = inventory_get_item_counts(adventurer[T_ADVENTURER_INVENTORY])
     fmt_fn = lambda d: ', '.join(f'{k} (x{v})' for k, v in d.items())
     text = f"items: {fmt_fn(items) if len(items) > 0 else 'aucun'}"
     el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_BOTTOM_RIGHT, text, "white", bottom_right_offset_y)
