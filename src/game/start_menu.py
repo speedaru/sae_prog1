@@ -111,7 +111,7 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
     fltk.image(0,0,background_path,ancrage="nw")
 
     # game mode
-    game_mode: GameModeE = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_GAME_MODE]
+    game_mode: GameModeE = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_GAME_MODE]
     text = f"Mode de jeu: {get_game_mode_text(game_mode)}"
     font_size = 24
     pos = gui_geom.anchor_text(gui_geom.E_UI_ANCHOR_BOTTOM_LEFT, text, font_size, padding=20)
@@ -154,13 +154,13 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
         y += text_size[1] + PADDING_Y
 
     # if left clicked pressed return selected dungeon as EventDataT
-    ev: FltkEvent = game_context[T_GAME_CONTEXT_EVENT][T_GAME_EVENT_TYPE]
+    ev: FltkEvent = game_context[T_GAME_CTX_EVENT][T_GAME_EVENT_TYPE]
     if fltk.type_ev(ev) == KEY_X1:
         click_pos = fltk_ext.position_souris(ev)  # coordonnées de la souris
 
         # game mode button clicked
         if in_rectangle(click_pos, game_mode_button_rect[0], game_mode_button_rect[1]):
-            game_data = game_context[T_GAME_CONTEXT_GAME_DATA]
+            game_data = game_context[T_GAME_CTX_GAME_DATA]
             current_mode = game_data[T_GAME_DATA_GAME_MODE]
             game_data[T_GAME_DATA_GAME_MODE] = (current_mode + 1) % E_GAME_MODE_COUNT
 
@@ -170,7 +170,7 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
             br = _get_br(position)
             if in_rectangle(click_pos, tl, br):
                 game_file_path = os.path.join(DUNGEON_FILES_DIR, str(position[_POSITIONS_DUNGEON]))
-                parsed_game_data: GameDataT = game_context[T_GAME_CONTEXT_GAME_DATA][:]
+                parsed_game_data: GameDataT = game_context[T_GAME_CTX_GAME_DATA][:]
                 parsed_successfuly = game_data_parse_file(parsed_game_data, game_file_path)
                 if parsed_successfuly:
                     return parsed_game_data

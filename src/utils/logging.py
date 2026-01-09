@@ -4,16 +4,18 @@ Simple logging module using bitwise flags (log levels) to control message output
 The global LOG_LEVEL constant determines which types of messages will be printed.
 """
 
-LOG_LEVEL_RELEASE = 0x1
-LOG_LEVEL_DEBUG = 0x2
-LOG_LEVEL_DEBUG_FULL = 0x4
-LOG_LEVEL_EVENT = 0x8
-LOG_LEVEL_TRACE = 0x10
-LOG_LEVEL_ERROR = 0x20
-LOG_LEVEL_FPS   = 0x40
+LOG_LEVEL_RELEASE =     1 << 0
+LOG_LEVEL_DEBUG =       1 << 1
+LOG_LEVEL_DEBUG_FULL =  1 << 2
+LOG_LEVEL_EVENT =       1 << 3
+LOG_LEVEL_TRACE =       1 << 4
+LOG_LEVEL_ERROR =       1 << 5
+LOG_LEVEL_FPS   =       1 << 6
+LOG_LEVEL_WARNING =     1 << 7
+LOG_LEVEL_RENDERING =   1 << 8
 
 # LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_DEBUG | LOG_LEVEL_DEBUG_FULL | LOG_LEVEL_EVENT
-LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_DEBUG | LOG_LEVEL_EVENT | LOG_LEVEL_ERROR
+LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_DEBUG | LOG_LEVEL_EVENT | LOG_LEVEL_ERROR | LOG_LEVEL_WARNING
 # LOG_LEVEL = LOG_LEVEL_RELEASE | LOG_LEVEL_ERROR
 
 def log(log_level, message: str, new_line: bool = True):
@@ -49,3 +51,9 @@ def log_error(message: str, new_line: bool = True):
 
 def log_fps(message: str, new_line: bool = True):
     log(LOG_LEVEL_FPS, message, new_line)
+
+def log_warning(message: str, new_line: bool = True):
+    log(LOG_LEVEL_WARNING, message, new_line)
+
+def log_rendering(message: str, new_line: bool = True):
+    log(LOG_LEVEL_RENDERING, message, new_line)

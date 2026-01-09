@@ -17,29 +17,36 @@ DragonT = list[RoomPosT | int]
 T_DRAGON_COUNT = T_ENTITY_COUNT
 
 
-def dragon_init(dragon: DragonT, level: int = 1, room_pos: RoomPosT = (0, 0)):
-    """
-    Initializes a dragon structure with a specific level and position.
+# def dragon_init(dragon: DragonT, level: int = 1, room_pos: RoomPosT = (0, 0)):
+#     """
+#     Initializes a dragon structure with a specific level and position.
+#
+#     Args:
+#         dragon (DragonT): The list representing the dragon (modified in place).
+#         level (int, optional): The level of the dragon. Defaults to 1.
+#         room_pos (list[int], optional): The [x, y] position in the dungeon. Defaults to [0, 0].
+#
+#     Doctest:
+#
+#     >>> d = []
+#     >>> # Standard initialization
+#     >>> dragon_init(d, level=5, room_pos=[1, 1])
+#     >>> d
+#     [[1, 1], 5]
+#     
+#     >>> # Verifying indices using constants
+#     >>> d[DRAGON_LEVEL]
+#     5
+#     """
+#     # room_pos = [randrange(0, 6), randrange(0, 6)]
+#     # entity_init(dragon, level, room_pos, T_DRAGON_COUNT)
+#     returt
 
-    Args:
-        dragon (DragonT): The list representing the dragon (modified in place).
-        level (int, optional): The level of the dragon. Defaults to 1.
-        room_pos (list[int], optional): The [x, y] position in the dungeon. Defaults to [0, 0].
+def dragon_init():
+    pass
 
-    Doctest:
-
-    >>> d = []
-    >>> # Standard initialization
-    >>> dragon_init(d, level=5, room_pos=[1, 1])
-    >>> d
-    [[1, 1], 5]
-    
-    >>> # Verifying indices using constants
-    >>> d[DRAGON_LEVEL]
-    5
-    """
-    # room_pos = [randrange(0, 6), randrange(0, 6)]
-    entity_init(dragon, level, room_pos, T_DRAGON_COUNT)
+def dragon_create(room_pos: RoomPosT = room_pos_create(0, 0), level: int = 1):
+    return entity_create(entity_type=E_ENTITY_DRAGON, room_pos=room_pos, level=level, entity_size=T_DRAGON_COUNT)
 
 def dragon_render(dragon: DragonT, assets: AssetsT):
     """
@@ -86,13 +93,11 @@ def dragon_create_dragons(dragons: list[DragonT], dungeon_size: DungeonSizeT, co
     assert(count > 0) # at least 1 dragon
 
     for i in range(count):
-        d = DragonT()
-
         # put dragon in random room
         # but start at 1 so it doesnt spawn on adventurer
         random_col = randrange(1, dungeon_size[DUNGEON_SIZE_COL])
         random_row = randrange(1, dungeon_size[DUNGEON_SIZE_ROW])
         random_room = room_pos_create(col=random_col, row=random_row)
 
-        dragon_init(d, room_pos=random_room, level=(i + 1))
+        d = dragon_create(room_pos=random_room, level=(i + 1))
         dragons.append(d)

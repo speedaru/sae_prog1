@@ -3,9 +3,9 @@ from types import NoneType
 import libs.fltk as fltk
 from libs.fltk import FltkEvent, TkEvent
 
-import src.engine.game_logic as game_logic
+import src.game.logic as logic
 import src.engine.parsing as parsing
-from src.engine.structs.entities import *
+from src.engine.structs.entity_system import *
 from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
@@ -22,6 +22,23 @@ from src.utils.logging import *
 
 
 # -------------------- GENERAL EVENT HANDLERS --------------------
+def handle_exit_key(game_event: GameEventT, game_context):
+    game_flags = game_context[T_GAME_CTX_GAME_FLAGS]
+
+    event_info = event_get_info(game_event)
+    if event_info[EVENT_INFO_TYPE] == None:
+        return None
+
+    exit_key_pressed = event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == EXIT_KEY.lower()
+
+    # start menu -> exit game
+    if exit_key_pressed and game_flags & F_GAME_MENU:
+        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_EXIT_PROGRAM
+    # game screen -> go back to start menu
+    elif exit_key_pressed and game_flags & F_GAME_GAME:
+        # reset game context to startup value
+        logic.reset_game_context(game_context)
+
 def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
     """
     Handles events occurring while in the Start Menu state.
@@ -38,34 +55,41 @@ def handle_start_menu_event(game_event: GameEventT, game_context: GameContextT):
     if event_info[EVENT_INFO_TYPE] == None:
         return None
 
+    # switch to game screen
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
         # if no dungeon selected ignore event
         if game_event[T_GAME_EVENT_DATA] == None:
             return
 
         loaded_game: GameDataT = game_event[T_GAME_EVENT_DATA]
-        log_trace(f"loaded game, dungeon: {loaded_game[T_GAME_DATA_DUNGEON]=}")
-        log_trace(f"loaded game, adve: {loaded_game[T_GAME_DATA_ENTITIES][T_ENTITIES_ADVENTURER]=}")
-        log_trace(f"loaded game, dragons: {loaded_game[T_GAME_DATA_ENTITIES][T_ENTITIES_DRAGONS]=}")
-        game_logic.load_game_data(game_context, loaded_game)
+        # log_trace(f"loaded game, dungeon: {loaded_game[T_GAME_DATA_DUNGEON]=}")
+        # log_trace(f"loaded game, adve: {loaded_game[T_GAME_DATA_ENTITY_SYSTEM][T_ENTITIES_ADVENTURER]=}")
+        # log_trace(f"loaded game, dragons: {loaded_game[T_GAME_DATA_ENTITY_SYSTEM][T_ENTITIES_DRAGONS]=}")
+        logic.load_game_data(game_context, loaded_game)
 
-        game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+        # switch to game screen, dungeons turn, calculate initial adventurer path
+        # remove start menu flag
+        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_GAME | F_GAME_TURN_DUNGEON | F_GAME_UPDATE_PATH
+        game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_MENU
 
 def handle_game_event(game_event: GameEventT, game_context: GameContextT):
     event_info = event_get_info(game_event)
     if event_info[EVENT_INFO_TYPE] == None:
         return None
 
-    # restart dungeon
+    # reset dungeon
     if event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_R:
-        game_logic.reset_game_data(game_context)
+        logic.reset_game_data(game_context)
+        logic.invalidate_adventurer_path(game_context)
 
-        # set turn to dungeon
-        game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_GAME_TURN_DUNGEON
+        # set: turn to dungeon, can handle events, update path
+        # unset: adventurer moving, turn to player
+        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_TURN_DUNGEON | F_GAME_HANDLE_EVENTS | F_GAME_UPDATE_PATH
+        game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_TURN_PLAYER | ~F_GAME_ADVENTURER_MOVING
     # save game
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_S:
         parsing.save_game(game_context)
-    # reload game
+    # load saved game
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_I:
         parsing.load_saved_game(game_context)
 
@@ -88,45 +112,31 @@ def handle_game_dungeon_event(game_event: GameEventT, game_context: GameContextT
     if event_info[EVENT_INFO_TYPE] == None:
         return None
 
-    # first handle general events no matter the turn
-    handle_game_event(game_event, game_context)
+    # # first handle general events no matter the turn
+    # handle_game_event(game_event, game_context)
 
     log_debug_full(f"key pressed: {event_info[EVENT_INFO_KEY_PRESSED]}")
     # rotate room
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
-        game_logic.rotate_room(event_info, game_context)
+        success = logic.rotate_room(event_info, game_context)
+        if success:
+            logic.invalidate_adventurer_path(game_context)
     # place treasure
     elif event_info[EVENT_INFO_TYPE] == KEY_X2:
-        # log_debug(f"game data: {game_context[GAME_CONTEXT_GAME_DATA]}")
-
-        # skip if no more treasures left
-        treasure_count = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_TREASURE_COUNT]
-        if treasure_count <= 0:
-            return
-
-        dungeon: DungeonT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_DUNGEON]
-        entities: EntitiesT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_ENTITIES]
-
-        successfuly_placed = game_logic.place_treasure(event_info, dungeon, entities)
-        if successfuly_placed:
-            game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_TREASURE_COUNT] -= 1
-    # finish turning rooms and stuff
+        success = logic.place_treasure(event_info, game_context)
+        if success:
+            logic.invalidate_adventurer_path(game_context)
+    # finished turning rooms and stuff
     elif event_info[EVENT_INFO_IS_KEY] and event_info[EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
-        # execute dungeon turn
-        game_logic.do_dungeon_turn(game_context)
-
-        # move dragons
-        dungeon: DungeonT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_DUNGEON]
-        entities: EntitiesT = game_context[T_GAME_CONTEXT_GAME_DATA][T_GAME_DATA_ENTITIES]
-        game_logic.move_dragons_randomly(dungeon, entities)
+        logic.start_moving_adventurer(game_context)
 
 def handle_game_player_event(game_event: GameEventT, game_context: GameContextT):
     event_info = event_get_info(game_event)
     if event_info[EVENT_INFO_TYPE] == None:
         return None
 
-    # first handle general events no matter the turn
-    handle_game_event(game_event, game_context)
+    # # first handle general events no matter the turn
+    # handle_game_event(game_event, game_context)
 
     # draw player movement manually
     if event_info[EVENT_INFO_TYPE] == KEY_X1:
@@ -138,9 +148,9 @@ def handle_game_player_event(game_event: GameEventT, game_context: GameContextT)
 
 def handle_game_finish(game_context: GameContextT):
     fltk.attend_ev()
-    game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_EXIT
+    game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_EXIT_PROGRAM
 
-def handle_event(game_event: GameEventT, game_context: GameContextT):
+def handle_event(game_context: GameContextT):
     """
     Main event dispatcher.
     
@@ -151,20 +161,32 @@ def handle_event(game_event: GameEventT, game_context: GameContextT):
         game_event (GameEventT): The event to handle.
         game_context (GameContextT): The state of the game.
     """
-    game_state = game_context[T_GAME_CONTEXT_GAME_STATE]
+    game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
 
-    if fltk.touche_pressee(EXIT_KEY):
-        game_context[T_GAME_CONTEXT_GAME_STATE] = STATE_EXIT
+    game_event: GameEventT = game_context[T_GAME_CTX_EVENT]
+    event_captured = game_event[T_GAME_EVENT_TYPE] != None or game_event[T_GAME_EVENT_DATA] != None
+
+    handle_exit_key(game_event, game_context)
+
+    # check if theres nothing to handle
+    # or HANDLE_EVENTS flag is not set
+    if not event_captured or not (game_flags & F_GAME_HANDLE_EVENTS):
         return
 
-    log_trace(f"game state: {game_state}")
+    log_trace(f"game state: {game_flags}")
 
     # start menu
-    if game_state == STATE_MENU_START:
+    if game_flags & F_GAME_MENU:
         handle_start_menu_event(game_event, game_context)
-    elif game_state == STATE_GAME_TURN_PLAYER:
+    # general game event
+    if game_flags & F_GAME_GAME:
+        handle_game_event(game_event, game_context)
+    # player turn event
+    if game_flags & F_GAME_TURN_PLAYER:
         handle_game_player_event(game_event, game_context)
-    elif game_state == STATE_GAME_TURN_DUNGEON:
+    # dungeon turn event
+    if game_flags & F_GAME_TURN_DUNGEON:
         handle_game_dungeon_event(game_event, game_context)
-    elif game_state == STATE_GAME_DONE_LOST or game_state == STATE_GAME_DONE_WON:
+    # game finished event
+    if game_flags & F_GAME_GAME_FINISHED:
         handle_game_finish(game_context)
