@@ -6,6 +6,7 @@ from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
 from src.engine.structs.treasure import *
 from src.engine.structs.strong_sword import *
+from src.engine.structs.chaos_seal import *
 
 from src.game.entity_definitions import *
 
@@ -160,8 +161,10 @@ def entity_system_render(entity_system: EntitySystemT, assets: AssetsT):
             treasure_render(base_entity, assets)
         elif base_entity_is(base_entity, E_ENTITY_STRONG_SWORD):
             strong_sword_render(base_entity, assets)
+        elif base_entity_is(base_entity, E_ENTITY_CHAOS_SEAL):
+            chaos_seal_render(base_entity, assets)
         else:
-            log_rendering(f"trying to render unknown entity (type: {base_entity[T_BASE_ENTITY_TYPE]}): {base_entity}")
+            log_warning(f"trying to render unknown entity (type: {base_entity[T_BASE_ENTITY_TYPE]}): {base_entity}")
 
     # adventurer = entity_system[T_entity_system_ADVENTURER]
     # dragons = entity_system[T_entity_system_DRAGONS]

@@ -20,7 +20,7 @@ Context Indices (Pseudo-Enums):
     GAME_CONTEXT_ASSETS, GAME_CONTEXT_GAME_STATE, etc.
 
 Event Indices (Pseudo-Enums):
-    Used to access `GameEventT` list elements.
+    Used to access `InputEventT` list elements.
     GAME_EVENT_TYPE, GAME_EVENT_DATA.
 """
 from types import NoneType
@@ -28,12 +28,12 @@ from typing import Any
 
 from libs.fltk import FltkEvent
 
-from src.engine.asset_manager import AssetsT, BlockT, BlockListT
+from src.engine.asset_manager import AssetsT, BlockT, BlockListT, BLOCK_SCALED_SIZE
+from src.engine.entity_system import *
+from src.engine.game_event_system import *
 from src.engine.structs.dungeon import DungeonT, dungeon_init
-from src.engine.structs.entity_system import *
 from src.engine.structs.adventurer import AdventurerT
 from src.engine.structs.dragon import DragonT
-from src.engine.asset_manager import BLOCK_SCALED_SIZE
 
 from src.game.state_manager import GameFlags
 from src.game.entity_definitions import *
@@ -47,9 +47,9 @@ EXIT_KEY = KEY_ESCAPE
 DUNGEON_DRAGONS_COUNT = 3
 
 # types
-GameEventDataT = Any
-GameEventT = list[FltkEvent | GameEventDataT] # data from game event
-GameContextT = list[AssetsT | GameEventT | DungeonT | GameFlags | NoneType | EntityT | AdventurerT | list[DragonT]]
+GameEventDataT = Any # to make it explicit when functions return event data
+InputEventT = list[FltkEvent | GameEventDataT] # data from game event
+GameContextT = list[AssetsT | InputEventT | DungeonT | GameFlags | NoneType | EntityT | AdventurerT | list[DragonT]]
 
 # enum for game context
 T_GAME_CTX_ASSETS = 0         # list of block images
@@ -61,9 +61,9 @@ T_GAME_CTX_FPS_MANAGER = 5    # see use case in engine/fps_manager.py
 T_GAME_CTX_COUNT = 6
 
 # enum for game event
-T_GAME_EVENT_TYPE = 0 # event type, FltkEvent
-T_GAME_EVENT_DATA = 1 # event data
-T_GAME_EVENT_COUNT = 2
+T_INPUT_EVENT_TYPE = 0 # event type, FltkEvent
+T_INPUT_EVENT_DATA = 1 # event data
+T_INPUT_EVENT_COUNT = 2
 
 # game mode enums
 GameModeE = int
@@ -73,12 +73,13 @@ E_GAME_MODE_COUNT = 2
 
 # dungeon, player, dragons, etc...
 GameDataT = list[DungeonT | EntitySystemT | int | None]
-T_GAME_DATA_DUNGEON = 0
-T_GAME_DATA_ENTITY_SYSTEM = 1
-T_GAME_DATA_TREASURE_COUNT = 2 # treasure count in dungeon
-T_GAME_DATA_GAME_MODE = 3
-T_GAME_DATA_ROUND = 4 # which round are we on
-T_GAME_DATA_COUNT = 5
+T_GAME_DATA_DUNGEON = 0 # DungeonT
+T_GAME_DATA_ENTITY_SYSTEM = 1 # EntitySystemT
+T_GAME_DATA_EVENT_SYSTEM = 2    # GameEventSystemT
+T_GAME_DATA_TREASURE_COUNT = 3 # treasure count left in dungeon (mutable)
+T_GAME_DATA_GAME_MODE = 4 # GameModeE
+T_GAME_DATA_ROUND = 5 # round counter (starts at 1)
+T_GAME_DATA_COUNT = 6
 
 def game_data_init() -> GameDataT:
     # dungeon
@@ -88,23 +89,24 @@ def game_data_init() -> GameDataT:
     game_data: GameDataT = [None] * T_GAME_DATA_COUNT
     game_data[T_GAME_DATA_DUNGEON] = dungeon
     game_data[T_GAME_DATA_ENTITY_SYSTEM] = entity_system_create()
+    game_data[T_GAME_DATA_EVENT_SYSTEM] = game_event_system_create()
     game_data[T_GAME_DATA_TREASURE_COUNT] = 0
     game_data[T_GAME_DATA_GAME_MODE] = E_GAME_MODE_NORMAL
     game_data[T_GAME_DATA_ROUND] = 1
 
     return game_data
 
-def game_event_create(event_type = None, event_data = None) -> GameEventT:
-    event = [None] * T_GAME_EVENT_COUNT
+def input_event_create(event_type = None, event_data = None) -> InputEventT:
+    event = [None] * T_INPUT_EVENT_COUNT
 
-    event[T_GAME_EVENT_TYPE] = event_type
-    event[T_GAME_EVENT_DATA] = event_data
+    event[T_INPUT_EVENT_TYPE] = event_type
+    event[T_INPUT_EVENT_DATA] = event_data
 
     return event
 
 def game_context_create(assets,
                         game_flags,
-                        event: GameEventT,
+                        event, # InputEventT
                         game_data,
                         original_game_data,
                         fps_manager) -> GameContextT:

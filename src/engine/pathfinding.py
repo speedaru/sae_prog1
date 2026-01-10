@@ -148,27 +148,6 @@ def find_and_set_adventurer_path(game_data: GameDataT):
     # if dragon not found, or path not found, empty path
     adventurer[T_ADVENTURER_PATH] = MovementPathT()
 
-def pickup_items(entity_system: EntitySystemT, adventurer: AdventurerT, room_pos: RoomPosT):
-    """
-    if any items is in room_poos then it will pick it up and place it in inventory
-    """
-    entity_items = entity_system_get_all_types(entity_system, ENTITY_ITEMS)
-
-    for i in range(len(entity_items)):
-        base_entity: list = entity_items[i]
-        if base_entity[T_BASE_ENTITY_ROOM_POS] == room_pos:
-            log_debug_full(f"found item in current room: {room_pos}")
-            
-            # no data for now, we just know that we have that item, no item specific info
-            inventory_item = inventory_item_create(item_type=base_entity[T_BASE_ENTITY_TYPE], item_data=None)
-
-            # add item to inventory
-            inventory_add_item(adventurer[T_ADVENTURER_INVENTORY], inventory_item)
-
-            # remove picked up items from entities
-            entity_system_remove_entity(entity_system, base_entity)
-            break
-
 def do_adventurer_path(adventurer: AdventurerT, entity_system: EntitySystemT) -> bool:
     """
     moves just 1 room per call
@@ -184,9 +163,6 @@ def do_adventurer_path(adventurer: AdventurerT, entity_system: EntitySystemT) ->
 
     # update adventurer pos to next room
     adventurer[T_BASE_ENTITY_ROOM_POS] = next_room_pos
-
-    # pick up items if there are any in new room
-    pickup_items(entity_system, adventurer, next_room_pos)
 
     # if 0 rooms to move left then we finished moving the adventurer
     return len(movement_path) == 0

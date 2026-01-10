@@ -150,7 +150,7 @@ def main_loop():
     # init game context
     game_context: Any = game_context_create(assets=assets,
                                             game_flags=GAME_FLAGS_STARTUP_FLAGS,
-                                            event=game_event_create(),
+                                            event=input_event_create(),
                                             game_data=game_data_init(),
                                             original_game_data=game_data_init(),
                                             fps_manager=fps_mgr)
@@ -165,7 +165,7 @@ def main_loop():
         # get event before rendering bcs we might use it in render fn
         if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
             event_type: FltkEvent | NoneType = fltk.donne_ev()
-            game_context[T_GAME_CTX_EVENT] = game_event_create(event_type=event_type)    
+            game_context[T_GAME_CTX_EVENT] = input_event_create(event_type=event_type)    
 
         # render
         # pass event to render function so it can send back event_data
@@ -175,7 +175,7 @@ def main_loop():
 
         # handle event if there is one
         if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
-            game_context[T_GAME_CTX_EVENT][T_GAME_EVENT_DATA] = event_data
+            game_context[T_GAME_CTX_EVENT][T_INPUT_EVENT_DATA] = event_data
 
         # call event handler
         event_handler.handle_event(game_context)

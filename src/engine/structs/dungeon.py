@@ -141,7 +141,10 @@ def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
     # get room basic door setup
     room_id = room[ROOM_BLOCK_ID]
 
-    if room_id == BLOCK_SINGLE:
+
+    if room_id == BLOCK_SOLID:
+        room_connections = (False, False, False, False)
+    elif room_id == BLOCK_SINGLE:
         room_connections = (True, False, False, False)
     elif room_id == BLOCK_DOUBLE_ADJACENT:
         room_connections = (True, True, False, False)
