@@ -78,7 +78,7 @@ def entity_render(entity: EntityT, image):
 
     Note: This function performs graphical operations and cannot be tested via doctest.
     """
-    draw_x, draw_y = base_entity_render(entity, image)
+    draw_x, draw_y = base_entity_render(entity, image, CHARACTERS_SIZES)
 
     # draw player level
     TEXT_OFFSET = (CHARACTERS_SIZES[0] + 4, CHARACTERS_SIZES[1])

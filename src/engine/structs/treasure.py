@@ -22,4 +22,4 @@ def treasure_render(treasure: TreasureT, assets: AssetsT):
 
     image_id = treasure[T_TREASURE_IMAGE_ID]
     image = assets[T_ASSETS_ITEMS][image_id]
-    base_entity_render(treasure, image)
+    base_entity_render(treasure, image, ITEM_SIZES)

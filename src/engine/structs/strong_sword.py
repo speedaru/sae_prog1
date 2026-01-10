@@ -15,4 +15,4 @@ def strong_sword_render(strong_sword: StrongSwordT, assets: AssetsT):
         return
 
     image = assets[T_ASSETS_ITEMS][T_ITEMS_STRONG_SWORD]
-    base_entity_render(strong_sword, image)
+    base_entity_render(strong_sword, image, ITEM_SIZES)

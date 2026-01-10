@@ -1,4 +1,3 @@
-from io import FileIO
 import time
 
 import src.engine.engine_config as engine_config
@@ -33,22 +32,40 @@ def fps_manager_is_sleeping(fps_manager: FpsManagerT) -> bool:
     return fps_manager[T_FPS_MANAGER_SLEEPING]
 
 def fps_manager_slept_enough(fps_manager: FpsManagerT) -> bool:
+    """
+    if finished sleeping then set sleeping back to False
+    returns: True if currently sleeping but finished sleeping
+    """
+    if not fps_manager[T_FPS_MANAGER_SLEEPING]:
+        return False
+
     dt = calculate_delta_time(fps_manager[T_FPS_MANAGER_CURRENT_FRAME_TIME], fps_manager[T_FPS_MANAGER_LAST_HANDLED_FRAME])
     target_dt = fps_manager[T_FPS_MANAGER_SLEEP_TARGET]
 
-    finished_sleep = (dt - target_dt) > 0
+    slept_enough = (dt - target_dt) > 0
 
-    fps_manager[T_FPS_MANAGER_SLEEPING] = not finished_sleep
-    return finished_sleep
+    # reset sleeping bool and sleep target to originals before sleep
+    if slept_enough: 
+        fps_manager[T_FPS_MANAGER_SLEEPING] = False
+        fps_manager[T_FPS_MANAGER_SLEEP_TARGET] = 0.0
+
+        # reset handled frame so next sleep starts now
+        fps_manager_handled_frame(fps_manager)
+
+    return slept_enough
 
 def fps_manager_game_sleep(fps_manager: FpsManagerT, time_to_sleep: float):
     """
     sleeps asynchronously by not doing game logic if sleeping. but can still handle events
+    !!! WARNING !!! this function should only be called from game_sleep to not mess up GameEventSystemT
     """
     fps_manager[T_FPS_MANAGER_SLEEP_TARGET] = time_to_sleep
     fps_manager[T_FPS_MANAGER_SLEEPING] = True
 
 def fps_manager_handled_frame(fps_manager: FpsManagerT):
+    """
+    cant handle frame if sleeping
+    """
     fps_manager[T_FPS_MANAGER_LAST_HANDLED_FRAME] = fps_manager[T_FPS_MANAGER_CURRENT_FRAME_TIME]
 
 

@@ -1,4 +1,4 @@
-from src.engine.structs.entity_system import *
+from src.engine.entity_system import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.hud_element import *
 

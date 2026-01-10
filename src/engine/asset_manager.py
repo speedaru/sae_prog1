@@ -52,7 +52,8 @@ T_ITEMS_TREASURES_IMAGE4 = 3
 T_ITEMS_TREASURES_IMAGE5 = 4
 T_TREASURES_IMAGE_COUNT = 5 # how many treasure images are there
 T_ITEMS_STRONG_SWORD = 5
-T_ITEMS_COUNT = 6
+T_ITEMS_CHAOS_SEAL = 6
+T_ITEMS_COUNT = 7
 
 # enum for assets list
 T_ASSETS_BLOCKS = 0
@@ -116,6 +117,10 @@ def asset_manager_init() -> AssetsT:
     # load strong sword image
     image = os.path.join(ASSETS_DIR, "scithersword.png")
     items[T_ITEMS_STRONG_SWORD] = fltk._load_tk_image(image, ITEM_SIZES[0], ITEM_SIZES[1])
+
+    # load chaos seal image
+    image = os.path.join(ASSETS_DIR, "chaos_seal.png")
+    items[T_ITEMS_CHAOS_SEAL] = fltk._load_tk_image(image, ITEM_SIZES[0], ITEM_SIZES[1])
 
     # set assets
     assets[T_ASSETS_BLOCKS] = blocks

@@ -33,7 +33,7 @@ def base_entity_create(entity_type: EntityE = E_ENTITY_UNKNOWN,
 def base_entity_is(base_entity, entity_type: EntityE) -> bool:
     return base_entity[T_BASE_ENTITY_TYPE] == entity_type
 
-def base_entity_render(base_entity: BaseEntityT, image) -> tuple[int, int]:
+def base_entity_render(base_entity: BaseEntityT, image, image_size: tuple[int, int]) -> tuple[int, int]:
     """
     returns (draw_x, draw_y)
     """
@@ -45,8 +45,8 @@ def base_entity_render(base_entity: BaseEntityT, image) -> tuple[int, int]:
     draw_y = room_size[1] * entity_pos[1] 
 
     # add to draw position so we draw the entity in the center of the room and not corner
-    draw_x += (room_size[0] // 2) - (CHARACTERS_SIZES[0] // 2)
-    draw_y += (room_size[1] // 2) - (CHARACTERS_SIZES[1] // 2)
+    draw_x += (room_size[0] // 2) - (image_size[0] // 2)
+    draw_y += (room_size[1] // 2) - (image_size[1] // 2)
 
     # draw entity
     fltk_ext.image_memoire(draw_x, draw_y, image, ancrage="nw")

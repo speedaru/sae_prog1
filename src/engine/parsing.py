@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 from types import NoneType
 from typing import Any
@@ -6,11 +7,14 @@ from src.config import *
 
 from src.game.game_definitions import *
 
+from src.engine.serialization import *
+from src.engine.entity_system import *
+from src.engine.game_event_system import *
 from src.engine.structs.dungeon import *
 from src.engine.structs.entity import *
-from src.engine.structs.entity_system import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
+from src.engine.structs.chaos_seal import *
 
 from src.utils.file_utils import path_exists
 
@@ -26,10 +30,11 @@ ROOM_REPS = set().union(ROOM_REPR4, ROOM_REPR3, ROOM_REPR2_ADJ, ROOM_REPR2_OPP, 
 _TypeValueT = tuple[int, Any]
 
 _SimpleGameCtxT = list[int | GameDataT]
-_T_SIMPLE_GAME_CTX_GAME_STATE = 0
+_T_SIMPLE_GAME_CTX_GAME_FLAGS = 0
 _T_SIMPLE_GAME_CTX_GAME_DATA = 1
 _T_SIMPLE_GAME_CTX_ORIGINAL_GAME_DATA = 2
-_T_SIMPLE_GAME_CTX_COUNT = 3
+_T_SIMPLE_GAME_CTX_SAVED_EVENTS = 3
+_T_SIMPLE_GAME_CTX_COUNT = 4
 
 # enum for game info fields
 E_GAME_INFO_UNKNOWN = 0xffff
@@ -139,19 +144,22 @@ def parse_entity(fields: list[str]) -> _TypeValueT:
         return unknown_ent
 
     entity_type = ENTITY_CHARS[entity_type_ch]
+
+    room_pos_res: RoomPosT | NoneType = _fields_get_room_pos(fields)
+    if not room_pos_res:
+        return unknown_ent
+
+    # create adventurer
     if entity_type == E_ENTITY_ADVENTURER:
-        room_pos_res: RoomPosT | NoneType = _fields_get_room_pos(fields)
-        if not room_pos_res:
-            return unknown_ent
-
-        # create adventurer
-        return (entity_type, adventurer_create(room_pos=room_pos_res))
+        return (entity_type, adventurer_create(room_pos_res))
+    # create strong sword
+    elif entity_type == E_ENTITY_STRONG_SWORD:
+        return (entity_type, strong_sword_create(room_pos_res))
+    # create chaos seal
+    elif entity_type == E_ENTITY_CHAOS_SEAL:
+        return (entity_type, chaos_seal_create(room_pos_res))
+    # create dragon
     elif entity_type == E_ENTITY_DRAGON:
-        # get room pos
-        room_pos_res: RoomPosT | NoneType = _fields_get_room_pos(fields)
-        if not room_pos_res:
-            return unknown_ent
-
         # get level
         FIELD_LEVEL = 3
         level = _entity_get_field(fields, FIELD_LEVEL)
@@ -163,13 +171,6 @@ def parse_entity(fields: list[str]) -> _TypeValueT:
 
         # create dragon
         return (entity_type, dragon_create(room_pos=room_pos_res, level=level))
-    elif entity_type == E_ENTITY_STRONG_SWORD:
-        room_pos_res: RoomPosT | NoneType = _fields_get_room_pos(fields)
-        if not room_pos_res:
-            return unknown_ent
-
-        # create strong sword
-        return (entity_type, strong_sword_create(room_pos_res))
     else:
         return unknown_ent
 
@@ -210,11 +211,17 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
         if line == "":
             continue
 
-        # line starts with ╬
+        # get first char or everything up to first space
+        line_first_field = line[0]
+        if ' ' in line:
+            line_first_field = line[:line.index(' ')]
+            log_debug(f"{line_first_field=}")
+
+        # line first char is like ╬, ╞, ...
         if line[0] in ROOM_REPS:
             dungeon_lines.append(line)
-        # line starts with A, D, T, ...
-        elif line[0] in ENTITY_CHARS or line[0] in GAME_INFO_CHARS:
+        # line starts with entity char or game info chars A, D, T, S, CS ...
+        elif line_first_field in ENTITY_CHARS or line_first_field in GAME_INFO_CHARS:
             game_data_lines.append(line)
         else:
             log_error(f"failed to parse file, unrecognized line: {line}")
@@ -272,23 +279,64 @@ def _from_json_safe(obj):
     else:
         return obj
 
+def _copy_temp_events(event_system) -> GameEventSystemT:
+    """
+    copies temp events but doesnt copy T_GAME_EVENT_GAME_CTX
+    """
+    temp_event_system: GameEventSystemT = game_event_system_create()
+
+    for phase, phase_events in enumerate(event_system):
+        for game_event in phase_events:
+            if game_event_system_is_temporary_game_event(game_event):
+                # remove game context while copying
+                event_game_ctx = game_event[T_GAME_EVENT_GAME_CTX]
+                game_event[T_GAME_EVENT_GAME_CTX] = None
+
+                # copy whole event without game ctx
+                game_event_copy = deepcopy(game_event)
+                temp_event_system[phase].append(game_event_copy)
+
+                # restore game context
+                game_event[T_GAME_EVENT_GAME_CTX] = event_game_ctx
+
+    return temp_event_system
+
 def serialize_game_context(game_context: GameContextT) -> str:
-    simple_game_context: list = [_SimpleGameCtxT()] * _T_SIMPLE_GAME_CTX_COUNT
-    simple_game_context[_T_SIMPLE_GAME_CTX_GAME_STATE] = game_context[T_GAME_CTX_GAME_FLAGS]
-    simple_game_context[_T_SIMPLE_GAME_CTX_GAME_DATA] = game_context[T_GAME_CTX_GAME_DATA]
+    event_system: GameEventSystemT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_EVENT_SYSTEM]
+    saved_events = temporary_game_event_save_events(event_system)
+
+    # temporarily remove event_system before copying game data
+    game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_EVENT_SYSTEM] = None
+
+    simple_game_context: list = [None] * _T_SIMPLE_GAME_CTX_COUNT
+    simple_game_context[_T_SIMPLE_GAME_CTX_GAME_FLAGS] = deepcopy(game_context[T_GAME_CTX_GAME_FLAGS])
+    simple_game_context[_T_SIMPLE_GAME_CTX_GAME_DATA] = deepcopy(game_context[T_GAME_CTX_GAME_DATA])
     simple_game_context[_T_SIMPLE_GAME_CTX_ORIGINAL_GAME_DATA] = game_context[T_GAME_CTX_ORIGINAL_GAME_DATA]
+    simple_game_context[_T_SIMPLE_GAME_CTX_SAVED_EVENTS] = saved_events
+
+    game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_EVENT_SYSTEM] = event_system
 
     ret = _to_json_safe(simple_game_context)
-    log_debug_full(f"serialized:\n{ret}")
 
     return json.dumps(ret)
 
 def deserialize_game_context(game_context: GameContextT, serialized_data: str):
     deserialized_simple_game_context = _from_json_safe(json.loads(serialized_data))
 
-    game_context[T_GAME_CTX_GAME_FLAGS] = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_GAME_STATE]
+    # copy existing entity system bcs its gonna get overrided
+    entity_system = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_EVENT_SYSTEM].copy()
+
+    # load saved events into entity_system
+    saved_events = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_SAVED_EVENTS]
+    for saved_event in saved_events:
+        temporary_game_event_load(game_context, saved_event)
+
+    game_context[T_GAME_CTX_GAME_FLAGS] = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_GAME_FLAGS]
     game_context[T_GAME_CTX_GAME_DATA][:] = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_GAME_DATA]
     game_context[T_GAME_CTX_ORIGINAL_GAME_DATA][:] = deserialized_simple_game_context[_T_SIMPLE_GAME_CTX_ORIGINAL_GAME_DATA]
+
+    # restore entity system
+    game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_EVENT_SYSTEM] = entity_system
 
 def save_game(game_context: GameContextT):
     """

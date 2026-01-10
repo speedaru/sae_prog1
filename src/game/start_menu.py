@@ -154,7 +154,7 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
         y += text_size[1] + PADDING_Y
 
     # if left clicked pressed return selected dungeon as EventDataT
-    ev: FltkEvent = game_context[T_GAME_CTX_EVENT][T_GAME_EVENT_TYPE]
+    ev: FltkEvent = game_context[T_GAME_CTX_EVENT][T_INPUT_EVENT_TYPE]
     if fltk.type_ev(ev) == KEY_X1:
         click_pos = fltk_ext.position_souris(ev)  # coordonnées de la souris
 
