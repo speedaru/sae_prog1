@@ -46,10 +46,6 @@ def handle_event_start_menu(input_event: InputEventT, game_context: GameContextT
     Specifically, it listens for a Left Click (KEY_X1) that carries a selected 
     dungeon in its data payload. If a dungeon is selected, it updates the 
     game context to transition to the playing state.
-
-    Args:
-        input_event (InputEventT): The event structure containing type and data.
-        game_context (GameContextT): The global game context to update.
     """
     event_info = input_event_get_info(input_event)
     if event_info[INPUT_EVENT_INFO_TYPE] == None:
@@ -67,10 +63,7 @@ def handle_event_start_menu(input_event: InputEventT, game_context: GameContextT
         # log_trace(f"loaded game, dragons: {loaded_game[T_GAME_DATA_ENTITY_SYSTEM][T_ENTITIES_DRAGONS]=}")
         logic.load_game_data(game_context, loaded_game)
 
-        # switch to game screen, dungeons turn, calculate initial adventurer path
-        # remove start menu flag
-        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_GAME | F_GAME_TURN_DUNGEON | F_GAME_UPDATE_PATH
-        game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_MENU
+        game_context[T_GAME_CTX_GAME_FLAGS] = GAME_FLAGS_GAME_START
 
 def handle_event_game(input_event: InputEventT, game_context: GameContextT):
     event_info = input_event_get_info(input_event)
@@ -80,12 +73,9 @@ def handle_event_game(input_event: InputEventT, game_context: GameContextT):
     # reset dungeon
     if event_info[INPUT_EVENT_INFO_IS_KEY] and event_info[INPUT_EVENT_INFO_KEY_PRESSED] == KEY_R:
         logic.reset_game_data(game_context)
-        logic.invalidate_adventurer_path(game_context)
 
-        # set: turn to dungeon, can handle events
-        # unset: adventurer moving, turn to player
-        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_TURN_DUNGEON | F_GAME_HANDLE_EVENTS
-        game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_TURN_PLAYER | ~F_GAME_ADVENTURER_MOVING
+        # reset all game flags
+        game_context[T_GAME_CTX_GAME_FLAGS] = GAME_FLAGS_GAME_START
     # save game
     elif event_info[INPUT_EVENT_INFO_IS_KEY] and event_info[INPUT_EVENT_INFO_KEY_PRESSED] == KEY_S:
         parsing.save_game(game_context)
@@ -96,21 +86,17 @@ def handle_event_game(input_event: InputEventT, game_context: GameContextT):
 def handle_event_game_dungeon(input_event: InputEventT, game_context: GameContextT):
     """
     Handles events occurring during the Dungeons's Turn (player controls dungeon).
-    
-    Processes:
-    - Left Clicks: To rotate rooms in the dungeon.
-    - Keyboard 'R': To restart or debug (depends on implementation).
-    - Keyboard 'Space': To end turn.
-
-    Args:
-        input_event (InputEventT): The current game event.
-        game_context (GameContextT): The game context containing the dungeon.
     """
     log_trace("game event, player turn !")
 
     event_info = input_event_get_info(input_event)
     if event_info[INPUT_EVENT_INFO_TYPE] == None:
         return None
+
+    # dont handle events if adventurer is currently moving
+    if bool(game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_ADVENTURER_MOVING):
+        log_debug(f"[handle_event_game_dungeon] dont handle game events bcs adventurer moving")
+        return
 
     log_debug_full(f"key pressed: {event_info[INPUT_EVENT_INFO_KEY_PRESSED]}")
     # rotate room
@@ -128,6 +114,10 @@ def handle_event_game_dungeon(input_event: InputEventT, game_context: GameContex
         logic.start_moving_adventurer(game_context)
 
 def handle_event_game_player(input_event: InputEventT, game_context: GameContextT):
+    """
+    only used to manually update player path
+    now obsolete
+    """
     event_info = input_event_get_info(input_event)
     if event_info[INPUT_EVENT_INFO_TYPE] == None:
         return None
@@ -150,10 +140,6 @@ def handle_event(game_context: GameContextT):
     
     Routes the event to the specific handler function based on the current
     game state stored in `game_context`.
-
-    Args:
-        input_event (InputEventT): The event to handle.
-        game_context (GameContextT): The state of the game.
     """
     game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
 
@@ -175,9 +161,6 @@ def handle_event(game_context: GameContextT):
     # general game event
     if game_flags & F_GAME_GAME:
         handle_event_game(input_event, game_context)
-    # player turn event
-    if game_flags & F_GAME_TURN_PLAYER:
-        handle_event_game_player(input_event, game_context)
     # dungeon turn event
     if game_flags & F_GAME_TURN_DUNGEON:
         handle_event_game_dungeon(input_event, game_context)
