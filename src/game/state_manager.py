@@ -15,7 +15,8 @@ F_GAME_HANDLE_EVENTS =       1 << 8  # dont handle game input events
 F_GAME_UPDATE_PATH =         1 << 9  # if set means we need to recalculate the adventurer path
 F_GAME_EXIT_PROGRAM =        1 << 16 # exit program after we finish the current main loop iteration
 
-GAME_FLAGS_STARTUP_FLAGS = F_GAME_MENU | F_GAME_HANDLE_EVENTS
+GAME_FLAGS_STARTUP = F_GAME_MENU | F_GAME_HANDLE_EVENTS
+GAME_FLAGS_GAME_START = F_GAME_GAME | F_GAME_HANDLE_EVENTS | F_GAME_UPDATE_PATH | F_GAME_TURN_DUNGEON
 
 def get_game_state_text(game_flags: GameFlags) -> str:
     state_text = ""

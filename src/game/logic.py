@@ -159,7 +159,7 @@ def load_game_data(game_context, game_data: GameDataT):
 def reset_game_context(game_context):
     # recreate new game context from scratch basicly
     game_context[:] = game_context_create(assets=game_context[T_GAME_CTX_ASSETS],
-                                          game_flags=GAME_FLAGS_STARTUP_FLAGS,
+                                          game_flags=GAME_FLAGS_STARTUP,
                                           event=input_event_create(),
                                           game_data=game_data_init(),
                                           original_game_data=game_data_init(),
@@ -179,8 +179,8 @@ def validate_adventurer_path(game_context):
     game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_UPDATE_PATH
 
 def start_moving_adventurer(game_context):
+    # add moving flag
     game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_ADVENTURER_MOVING
-    game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_HANDLE_EVENTS
 
 def extreme_mode_past_first_round(game_context):
     game_data = game_context[T_GAME_CTX_GAME_DATA]
@@ -488,25 +488,13 @@ def instaconsume_items(game_event: GameEventT):
         if inventory_item[T_INVENTORY_ITEM_TYPE] in ENTITY_ITEMS_INSTACONSUME:
             inventory_consume_item(inventory, inventory_item, callback_param=game_ctx)
 
-# def stop_moving_adventurer_if_finished(game_event: GameEventT):
-#     """
-#     GAME EVENT
-#     can stop moving if:
-#         adventurer finished path, moving flag hasnt been removed yet
-#     """
-#     game_context: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
-#
-#     if can_remove_moving_flag(game_context):
-#         game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_HANDLE_EVENTS
-#         game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_ADVENTURER_MOVING
-
 def stop_moving_adventurer(game_event: GameEventT):
     """
     GAME EVENT
     """
     game_context: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
 
-    game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_HANDLE_EVENTS
+    # remove moving flag
     game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_ADVENTURER_MOVING
 
 def foo_do_collisions(game_event: GameEventT):
