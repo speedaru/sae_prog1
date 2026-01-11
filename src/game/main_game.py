@@ -163,9 +163,9 @@ def main_loop():
         fps_mgr[T_FPS_MANAGER_CURRENT_FRAME_TIME] = ctime
 
         # get event before rendering bcs we might use it in render fn
-        # if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
-        event_type: FltkEvent | NoneType = fltk.donne_ev()
-        game_context[T_GAME_CTX_EVENT] = input_event_create(event_type=event_type)    
+        if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
+            event_type: FltkEvent | NoneType = fltk.donne_ev()
+            game_context[T_GAME_CTX_EVENT] = input_event_create(event_type=event_type)    
 
         # render
         # pass event to render function so it can send back event_data
@@ -174,8 +174,8 @@ def main_loop():
         gui.render()
 
         # handle event if there is one
-        # if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
-        game_context[T_GAME_CTX_EVENT][T_INPUT_EVENT_DATA] = event_data
+        if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_HANDLE_EVENTS:
+            game_context[T_GAME_CTX_EVENT][T_INPUT_EVENT_DATA] = event_data
 
         # call event handler
         event_handler.handle_event(game_context)
