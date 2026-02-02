@@ -10,6 +10,9 @@ import libs.fltk as fltk
 from src.engine.structs.dungeon import DungeonT
 from src.engine.parsing import *
 
+# ui framework
+import src.engine.ui_framework.ui as ui
+
 # config and game
 from src.config import DUNGEON_FILES_DIR
 from src.game.game_definitions import *
@@ -22,6 +25,7 @@ from src.engine.asset_manager import ASSETS_DIR
 
 import src.utils.fltk_extensions as fltk_ext 
 import src.utils.gui_geom as gui_geom 
+from src.utils.gui_geom import DEFAULT_FONT_SIZE
 
 
 # types
@@ -105,6 +109,8 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
         GameDataT | NoneType: The parsed GameDataT structure (dungeon, adventure, dragons) if a file was clicked,
                              otherwise None.
     """
+    ev: FltkEvent = game_context[T_GAME_CTX_EVENT][T_INPUT_EVENT_TYPE]
+
     # background
     BACKGROUND_FILE = "start_background.png"
     background_path = os.path.join(ASSETS_DIR, BACKGROUND_FILE)
@@ -116,9 +122,10 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
     font_size = 24
     pos = gui_geom.anchor_text(gui_geom.E_UI_ANCHOR_BOTTOM_LEFT, text, font_size, padding=20)
     color = "red" if game_mode == E_GAME_MODE_EXTREME else "yellow"
-    fltk.texte(pos[0], pos[1], chaine=text, couleur=color, taille=font_size)
-    game_mode_button_size = fltk.taille_texte(text, taille=font_size)
-    game_mode_button_rect = (pos, (pos[0] + game_mode_button_size[0], pos[1] + game_mode_button_size[1]))
+    if ui.button(ev, pos, text, text_color=color, font_size=font_size):
+        game_data = game_context[T_GAME_CTX_GAME_DATA]
+        current_mode = game_data[T_GAME_DATA_GAME_MODE]
+        game_data[T_GAME_DATA_GAME_MODE] = (current_mode + 1) % E_GAME_MODE_COUNT
 
     # retrieving dungeon files
     path_dungeons = Path(DUNGEON_FILES_DIR)
@@ -153,16 +160,14 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
 
         y += text_size[1] + PADDING_Y
 
+    text = "random dungeon"
+    pos = (gui_geom.calculate_center_x(fltk.taille_texte(text, taille=font_size)[0]), y)
+    if ui.button(ev, pos, text, text_color="yellow", font_size=font_size, outline_color="white", outline_size=2, inner_padding=12):
+        pass
+
     # if left clicked pressed return selected dungeon as EventDataT
-    ev: FltkEvent = game_context[T_GAME_CTX_EVENT][T_INPUT_EVENT_TYPE]
     if fltk.type_ev(ev) == KEY_X1:
         click_pos = fltk_ext.position_souris(ev)  # coordonnées de la souris
-
-        # game mode button clicked
-        if in_rectangle(click_pos, game_mode_button_rect[0], game_mode_button_rect[1]):
-            game_data = game_context[T_GAME_CTX_GAME_DATA]
-            current_mode = game_data[T_GAME_DATA_GAME_MODE]
-            game_data[T_GAME_DATA_GAME_MODE] = (current_mode + 1) % E_GAME_MODE_COUNT
 
         # check which text was clicked
         for position in positions:

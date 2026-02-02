@@ -13,6 +13,7 @@ F_GAME_GAME_LOST =           1 << 6  # game is finished and lost
 F_GAME_ADVENTURER_MOVING =   1 << 7  # adventurer is currently moving
 F_GAME_HANDLE_EVENTS =       1 << 8  # dont handle game input events
 F_GAME_UPDATE_PATH =         1 << 9  # if set means we need to recalculate the adventurer path
+F_GAME_RANDOM_DUNGEON =      1 << 10 # random dungeon menu selector
 F_GAME_EXIT_PROGRAM =        1 << 16 # exit program after we finish the current main loop iteration
 
 GAME_FLAGS_STARTUP = F_GAME_MENU | F_GAME_HANDLE_EVENTS
@@ -30,3 +31,6 @@ def get_game_state_text(game_flags: GameFlags) -> str:
         state_text = "Tour du donjon"
 
     return state_text
+
+def set_game_window(newWindow: int):
+    pass
