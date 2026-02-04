@@ -26,25 +26,24 @@ E_TEMP_EVENT_CHAOS_SEAL = 0
 def _chaos_seal_activate(chaos_seal_event: ChaosSealEventT):
     log_debug(f"[_chaos_seal_on_frame] activated chaos seal")
     game_data = chaos_seal_event[T_GAME_EVENT_GAME_CTX][T_GAME_CTX_GAME_DATA]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
-    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
 
     # create copy of current dungeon to restore it when destroyed
     chaos_seal_event[T_CHAOS_SEAL_EVENT_ORIGINAL_DUNGEON] = deepcopy(dungeon)
 
-    rows, cols = dungeon_get_height(dungeon), dungeon_get_width(dungeon)
-    dragon_positions = get_dragon_positions(entity_system)
+    rooms_to_block = get_dragon_positions(entity_system)
 
     # find lowest level dragon
     dragon_lowest_level = min(entity_system_get_all(entity_system, E_ENTITY_DRAGON), key=lambda e: e[T_ENTITY_LEVEL])
 
     # remove lower dragon pos from other dragon pos
-    dragon_positions.remove(dragon_lowest_level[T_BASE_ENTITY_ROOM_POS])
+    rooms_to_block.remove(dragon_lowest_level[T_BASE_ENTITY_ROOM_POS])
 
     # replace rooms
     for i, row in enumerate(dungeon):
         for j, col in enumerate(row):
-            if room_pos_create(row=i, col=j) in dragon_positions:
+            if room_pos_create(row=i, col=j) in rooms_to_block:
                 block_id = BLOCK_SOLID
                 rotation_count = 0
                 dungeon[i][j] = (block_id, rotation_count)
@@ -58,10 +57,29 @@ def _chaos_seal_on_destroy(chaos_seal_event: ChaosSealEventT):
 
     # restore original dungeon
     original_dungeon = chaos_seal_event[T_CHAOS_SEAL_EVENT_ORIGINAL_DUNGEON]
-    game_data[T_GAME_DATA_DUNGEON][:] = original_dungeon.copy()
+    game_data[T_DUNGEON_DATA_DUNGEON][:] = original_dungeon.copy()
 
 def _chaos_seal_on_round_end(chaos_seal_event: ChaosSealEventT):
     log_debug(f"[_chaos_seal_on_round_end] duration left: {chaos_seal_event[T_GAME_EVENT_DURATION]}")
+
+    # if chaos seal is active but all dragons are trapped, untrap lowest level one
+
+    game_data = chaos_seal_event[T_GAME_EVENT_GAME_CTX][T_GAME_CTX_GAME_DATA]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
+
+    # if no dragons, exit
+    dragons = entity_system_get_all(entity_system, E_ENTITY_DRAGON)
+    if len(dragons) <= 0:
+        return
+
+    # find lowest level dragon
+    dragon_lowest_level = min(dragons, key=lambda e: e[T_ENTITY_LEVEL])
+
+    if dragon_lowest_level != None:
+        room_pos = dragon_lowest_level[T_BASE_ENTITY_ROOM_POS]
+        row, col = room_pos[ROOM_POS_ROW], room_pos[ROOM_POS_COL]
+        dungeon[row][col] = [BLOCK_QUAD, dungeon[row][col][ROOM_ROTATION_COUNT]]
 
 
 def chaos_seal_event_register_ex(event_system: GameEventSystemT,

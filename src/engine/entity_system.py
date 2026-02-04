@@ -69,6 +69,18 @@ def entity_system_get_all(entity_system: EntitySystemT, entity_type: EntityE) ->
 
     return ents
 
+def entity_system_get_all_where(entity_system: EntitySystemT, entity_type: EntityE, filter_fn) -> list[BaseEntityT]:
+    """
+    get all occurences of a specific type of entity where filter_fn(entity) is true
+    """
+    ents = []
+
+    for entity in entity_system:
+        if entity[T_BASE_ENTITY_TYPE] == entity_type and filter_fn(entity):
+            ents.append(entity)
+
+    return ents
+
 def entity_system_get_all_types(entity_system: EntitySystemT, entity_types: set[EntityE]) -> list[BaseEntityT]:
     """
     same as entity_system_get_all but can pass multiple entity types

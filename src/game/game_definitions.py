@@ -52,13 +52,14 @@ InputEventT = list[FltkEvent | GameEventDataT] # data from game event
 GameContextT = list[AssetsT | InputEventT | DungeonT | GameFlags | NoneType | EntityT | AdventurerT | list[DragonT]]
 
 # enum for game context
-T_GAME_CTX_ASSETS = 0         # list of block images
-T_GAME_CTX_GAME_FLAGS = 1     # game state type
-T_GAME_CTX_EVENT = 2          # fltk event if there is one
-T_GAME_CTX_GAME_DATA = 3      # stores dungeon, entities etc
-T_GAME_CTX_ORIGINAL_GAME_DATA = 4 # store original game state so we can restore it
-T_GAME_CTX_FPS_MANAGER = 5    # see use case in engine/fps_manager.py
-T_GAME_CTX_COUNT = 6
+T_GAME_CTX_ASSETS               = 0 # list of block images
+T_GAME_CTX_GAME_FLAGS           = 1 # game state type
+T_GAME_CTX_ACTIVE_WINDOW        = 2 # current active window (menu, or game or wtv)
+T_GAME_CTX_EVENT                = 3 # fltk event if there is one
+T_GAME_CTX_GAME_DATA            = 4 # stores dungeon, entities etc
+T_GAME_CTX_ORIGINAL_GAME_DATA   = 5 # store original game state so we can restore it
+T_GAME_CTX_FPS_MANAGER          = 6 # see use case in engine/fps_manager.py
+T_GAME_CTX_COUNT                = 7
 
 # enum for game event
 T_INPUT_EVENT_TYPE = 0 # event type, FltkEvent
@@ -71,30 +72,44 @@ E_GAME_MODE_NORMAL = 0
 E_GAME_MODE_EXTREME = 1
 E_GAME_MODE_COUNT = 2
 
-# dungeon, player, dragons, etc...
-GameDataT = list[DungeonT | EntitySystemT | int | None]
-T_GAME_DATA_DUNGEON = 0 # DungeonT
-T_GAME_DATA_ENTITY_SYSTEM = 1 # EntitySystemT
-T_GAME_DATA_EVENT_SYSTEM = 2    # GameEventSystemT
-T_GAME_DATA_TREASURE_COUNT = 3 # treasure count left in dungeon (mutable)
-T_GAME_DATA_GAME_MODE = 4 # GameModeE
-T_GAME_DATA_ROUND = 5 # round counter (starts at 1)
-T_GAME_DATA_COUNT = 6
+# simple dungeon with just the dungeon and whats inside
+DungeonDataT = list[DungeonT | EntitySystemT | int | None]
+T_DUNGEON_DATA_DUNGEON = 0 # DungeonT
+T_DUNGEON_DATA_ENTITY_SYSTEM = 1 # EntitySystemT
+T_DUNGEON_DATA_TREASURE_COUNT = 2 # treasure count left in dungeon (mutable)
+T_DUNGEON_DATA_COUNT = 3
 
-def game_data_init() -> GameDataT:
+# dungeon data but with extra stuff like game mode round counter etc...
+GameDataT = list[DungeonT | EntitySystemT | int | None]
+T_GAME_DATA_EVENT_SYSTEM = T_DUNGEON_DATA_COUNT + 0 # GameEventSystemT
+T_GAME_DATA_GAME_MODE = T_DUNGEON_DATA_COUNT + 1 # GameModeE
+T_GAME_DATA_ROUND = T_DUNGEON_DATA_COUNT + 2 # round counter (starts at 1)
+T_GAME_DATA_COUNT = T_DUNGEON_DATA_COUNT + 3
+
+def dungeon_data_init(size = T_DUNGEON_DATA_COUNT) -> DungeonDataT:
     # dungeon
     dungeon = DungeonT()
     dungeon_init(dungeon, 0, 0)
 
-    game_data: GameDataT = [None] * T_GAME_DATA_COUNT
-    game_data[T_GAME_DATA_DUNGEON] = dungeon
-    game_data[T_GAME_DATA_ENTITY_SYSTEM] = entity_system_create()
+    dungeon_data: GameDataT = [None] * size
+    dungeon_data[T_DUNGEON_DATA_DUNGEON] = dungeon
+    dungeon_data[T_DUNGEON_DATA_ENTITY_SYSTEM] = entity_system_create()
+    dungeon_data[T_DUNGEON_DATA_TREASURE_COUNT] = 0
+
+    return dungeon_data
+
+def game_data_init() -> GameDataT:
+    game_data = dungeon_data_init(T_GAME_DATA_COUNT)
+
     game_data[T_GAME_DATA_EVENT_SYSTEM] = game_event_system_create()
-    game_data[T_GAME_DATA_TREASURE_COUNT] = 0
     game_data[T_GAME_DATA_GAME_MODE] = E_GAME_MODE_NORMAL
     game_data[T_GAME_DATA_ROUND] = 1
 
     return game_data
+
+def game_data_set_dungeon_data(game_data, dungeon_data):
+    for i in range(T_DUNGEON_DATA_COUNT):
+        game_data[i] = dungeon_data[i]
 
 def input_event_create(event_type = None, event_data = None) -> InputEventT:
     event = [None] * T_INPUT_EVENT_COUNT
@@ -106,6 +121,7 @@ def input_event_create(event_type = None, event_data = None) -> InputEventT:
 
 def game_context_create(assets,
                         game_flags,
+                        active_window,
                         event, # InputEventT
                         game_data,
                         original_game_data,
@@ -114,6 +130,7 @@ def game_context_create(assets,
 
     game_context[T_GAME_CTX_ASSETS] = assets
     game_context[T_GAME_CTX_GAME_FLAGS] = game_flags
+    game_context[T_GAME_CTX_ACTIVE_WINDOW] = active_window
     game_context[T_GAME_CTX_EVENT] = event
     game_context[T_GAME_CTX_GAME_DATA] = game_data
     game_context[T_GAME_CTX_ORIGINAL_GAME_DATA] = original_game_data

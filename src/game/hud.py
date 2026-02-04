@@ -23,7 +23,7 @@ def _add_hud_element(hud_elements: list[HudElementT],
 
 def get_hud_elements(game_context: GameContextT) -> list[HudElementT]:
     game_data: GameDataT = game_context[T_GAME_CTX_GAME_DATA]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
     hud_elements: list[HudElementT] = []
@@ -49,7 +49,7 @@ def get_hud_elements(game_context: GameContextT) -> list[HudElementT]:
     bottom_right_offset_y -= el_height - Y_PAD
 
     # treasures left to place
-    text = f"trésors restants: {game_data[T_GAME_DATA_TREASURE_COUNT]}"
+    text = f"trésors restants: {game_data[T_DUNGEON_DATA_TREASURE_COUNT]}"
     el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_BOTTOM_RIGHT, text, "white", bottom_right_offset_y)
     bottom_right_offset_y -= el_height - Y_PAD
 

@@ -129,7 +129,7 @@ def _fields_get_room_pos(fields: list[str]) -> RoomPosT | NoneType:
 def _set_game_info(game_data: GameDataT, game_info_type, game_info_val):
     if game_info_type == E_GAME_INFO_TREASURE_COUNT:
         log_debug_full(f"found treasure count: {game_info_val}")
-        game_data[T_GAME_DATA_TREASURE_COUNT] = game_info_val
+        game_data[T_DUNGEON_DATA_TREASURE_COUNT] = game_info_val
 
 def parse_entity(fields: list[str]) -> _TypeValueT:
     unknown_ent = (E_ENTITY_UNKNOWN, None)
@@ -226,8 +226,8 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
         else:
             log_error(f"failed to parse file, unrecognized line: {line}")
 
-    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
     log_debug(f"dungeon lines: {dungeon_lines=}")
     log_debug(f"entity lines: {game_data_lines=}")
@@ -255,7 +255,7 @@ def game_data_parse_file(game_data: GameDataT, game_save_file_path: str) -> bool
             _set_game_info(game_data, game_info_type, game_info)
             log_debug(f"loaded game info of type {game_info_type}")
 
-    log_debug_full(f"loaded dungeon: {game_data[T_GAME_DATA_DUNGEON]}")
+    log_debug_full(f"loaded dungeon: {game_data[T_DUNGEON_DATA_DUNGEON]}")
     return True
 
 def _to_json_safe(obj) -> str:

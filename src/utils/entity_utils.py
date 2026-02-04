@@ -3,14 +3,14 @@ from src.engine.structs.dragon import *
 from src.engine.entity_system import *
 from src.engine.structs.treasure import *
 
-def _get_entity_system_positions(entity_system, entity_system_to_skip: set[EntityE]) -> set[RoomPosT]:
+def _get_entity_system_positions(entity_system, entity_types_to_skip: set[EntityE]) -> set[RoomPosT]:
     # init with dragons positions first
     # entity_system_positions = [dragon[T_BASE_ENTITY_ROOM_POS] for dragon in entity_system[T_ENTITY_SYSTEM_DRAGONS]]
     positions = set()
 
     # other single ents
     for entity in entity_system:
-        if entity[T_BASE_ENTITY_TYPE] in entity_system_to_skip:
+        if entity[T_BASE_ENTITY_TYPE] in entity_types_to_skip:
             continue
 
         # check if valid ent and not just empty ent

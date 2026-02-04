@@ -23,7 +23,7 @@ from src.utils.logging import *
 
 # -------------------- GENERAL EVENT HANDLERS --------------------
 def handle_exit_key(input_event: InputEventT, game_context):
-    game_flags = game_context[T_GAME_CTX_GAME_FLAGS]
+    window: WindowE = game_context[T_GAME_CTX_ACTIVE_WINDOW]
 
     event_info = input_event_get_info(input_event)
     if event_info[INPUT_EVENT_INFO_TYPE] == None:
@@ -32,10 +32,10 @@ def handle_exit_key(input_event: InputEventT, game_context):
     exit_key_pressed = event_info[INPUT_EVENT_INFO_IS_KEY] and event_info[INPUT_EVENT_INFO_KEY_PRESSED] == EXIT_KEY.lower()
 
     # start menu -> exit game
-    if exit_key_pressed and game_flags & F_GAME_MENU:
+    if exit_key_pressed and window == E_WINDOW_START:
         game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_EXIT_PROGRAM
     # game screen -> go back to start menu
-    elif exit_key_pressed and game_flags & F_GAME_GAME:
+    elif exit_key_pressed:
         # reset game context to startup value
         logic.reset_game_context(game_context)
 
@@ -64,6 +64,7 @@ def handle_event_start_menu(input_event: InputEventT, game_context: GameContextT
         logic.load_game_data(game_context, loaded_game)
 
         game_context[T_GAME_CTX_GAME_FLAGS] = GAME_FLAGS_GAME_START
+        game_context[T_GAME_CTX_ACTIVE_WINDOW] = E_WINDOW_GAME
 
 def handle_event_game(input_event: InputEventT, game_context: GameContextT):
     event_info = input_event_get_info(input_event)
@@ -130,9 +131,37 @@ def handle_event_game_player(input_event: InputEventT, game_context: GameContext
     elif event_info[INPUT_EVENT_INFO_IS_KEY] and event_info[INPUT_EVENT_INFO_KEY_PRESSED] == KEY_SPACE:
         pass
 
-def handle_game_finish(game_context: GameContextT):
-    fltk.attend_ev()
-    game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_EXIT_PROGRAM
+def handle_event_random_dungeon(input_event: InputEventT, game_context: GameContextT):
+    event_info = input_event_get_info(input_event)
+    if event_info[INPUT_EVENT_INFO_TYPE] == None:
+        return None
+
+    if event_info[INPUT_EVENT_INFO_TYPE] == KEY_X1:
+        dungeon_data = input_event[T_INPUT_EVENT_DATA]
+
+        # if no random dungeon made then ignore
+        if dungeon_data == None:
+            return
+
+        # create game data
+        game_data = game_data_init()
+        game_data_set_dungeon_data(game_data, dungeon_data)
+
+        # load game data into game context properly
+        logic.load_game_data(game_context, game_data)
+        
+        # go to game window
+        game_context[T_GAME_CTX_ACTIVE_WINDOW] = E_WINDOW_GAME
+        game_context[T_GAME_CTX_GAME_FLAGS] = GAME_FLAGS_GAME_START
+
+def handle_game_finish(input_event: InputEventT, game_context: GameContextT):
+    event_info = input_event_get_info(input_event)
+    if event_info[INPUT_EVENT_INFO_TYPE] == None:
+        return None
+
+    # if exit key pressed then go back to menun, otherwise exit program
+    if not (event_info[INPUT_EVENT_INFO_IS_KEY] and event_info[INPUT_EVENT_INFO_KEY_PRESSED] == EXIT_KEY.lower()):
+        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_EXIT_PROGRAM
 
 def handle_event(game_context: GameContextT):
     """
@@ -142,6 +171,7 @@ def handle_event(game_context: GameContextT):
     game state stored in `game_context`.
     """
     game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
+    window: WindowE = game_context[T_GAME_CTX_ACTIVE_WINDOW]
 
     input_event: InputEventT = game_context[T_GAME_CTX_EVENT]
     event_captured = input_event[T_INPUT_EVENT_TYPE] != None or input_event[T_INPUT_EVENT_DATA] != None
@@ -156,14 +186,16 @@ def handle_event(game_context: GameContextT):
     log_trace(f"game state: {game_flags}")
 
     # start menu
-    if game_flags & F_GAME_MENU:
+    if window == E_WINDOW_START:
         handle_event_start_menu(input_event, game_context)
     # general game event
-    if game_flags & F_GAME_GAME:
+    elif window == E_WINDOW_GAME:
         handle_event_game(input_event, game_context)
-    # dungeon turn event
-    if game_flags & F_GAME_TURN_DUNGEON:
-        handle_event_game_dungeon(input_event, game_context)
-    # game finished event
-    if game_flags & F_GAME_GAME_FINISHED:
-        handle_game_finish(game_context)
+        # game finished event
+        if game_flags & F_GAME_GAME_FINISHED:
+            handle_game_finish(input_event, game_context)
+        # dungeon turn event
+        elif game_flags & F_GAME_TURN_DUNGEON:
+            handle_event_game_dungeon(input_event, game_context)
+    elif window == E_WINDOW_RANDOM_DUNGEON:
+        handle_event_random_dungeon(input_event, game_context)

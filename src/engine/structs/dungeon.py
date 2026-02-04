@@ -1,3 +1,4 @@
+import random
 import libs.fltk as fltk
 
 from src.utils.file_utils import read_utf8_file
@@ -30,6 +31,8 @@ ROOM_POS_COUNT = 2
 DungeonSizeT = RoomPosT # alias cuz also cols x rows
 DUNGEON_SIZE_COL = ROOM_POS_COL
 DUNGEON_SIZE_ROW = ROOM_POS_ROW
+
+DOOR_COUNT = 4
 
 # ---------- MANIPULATION FUNCTIONS ----------
 
@@ -100,6 +103,16 @@ def dungeon_init(dungeon: DungeonT, rows: int, cols: int) -> NoneType:
     for _ in range(rows):
         dungeon.append([dungeon_room_create()] * cols)
 
+def _rotate_room_connections(room_connections: RoomConnectionsT, room_rotations: int) -> RoomConnectionsT:
+    rotated_room_connections = [False] * DOOR_COUNT
+
+    # move door open state forward room_rotations % DOOR_COUNT times
+    for i in range(DOOR_COUNT):
+        rotated_i = (room_rotations + i) % DOOR_COUNT
+        rotated_room_connections[rotated_i] = room_connections[i]
+
+    return RoomConnectionsT(rotated_room_connections)
+
 def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
     """
     Calculates the open connections (doors) of a room based on its block type and rotation.
@@ -129,8 +142,6 @@ def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
     >>> dungeon_room_get_connections([BLOCK_QUAD, 1])
     (True, True, True, True)
     """
-    DOOR_COUNT = 4
-
     # init room connections that we will change and convert to tuple at end
     room_connections: RoomConnectionsT = RoomConnectionsT()
 
@@ -157,14 +168,44 @@ def dungeon_room_get_connections(room: RoomT) -> RoomConnectionsT:
 
     # rotate room
     room_rotations = room[ROOM_ROTATION_COUNT]
-    rotated_room_connections = [False] * DOOR_COUNT
+    return _rotate_room_connections(room_connections, room_rotations)
 
-    # move door open state forward room_rotations % DOOR_COUNT times
-    for i in range(DOOR_COUNT):
-        rotated_i = (i + room_rotations) % DOOR_COUNT
-        rotated_room_connections[rotated_i] = room_connections[i]
+def dungeon_room_from_connections(connections: RoomConnectionsT) -> RoomPosT:
+    """
+    The opposite of dungeon_room_get_connections.
+    Takes a tuple of 4 booleans and returns the best matching RoomT [BlockID, RotationCount].
+    
+    If no exact match is found (which shouldn't happen with standard blocks), 
+    it returns a Solid block.
+    """
+    # Define the "base" connection pattern for each block type at rotation 0
+    # These must match the logic in dungeon_room_get_connections
+    base_patterns = {
+        BLOCK_SOLID:           (False, False, False, False),
+        BLOCK_SINGLE:          (True, False, False, False),
+        BLOCK_DOUBLE_ADJACENT: (True, True, False, False),
+        BLOCK_DOUBLE_OPPOSITE: (True, False, True, False),
+        BLOCK_TRIPLE:          (True, True, True, False),
+        BLOCK_QUAD:            (True, True, True, True),
+    }
 
-    return RoomConnectionsT(rotated_room_connections)
+    # Iterate through every possible block type
+    for block_id, base_pattern in base_patterns.items():
+        # Try all 4 rotations (0, 1, 2, 3)
+        for r in range(DOOR_COUNT):
+            # Simulate the rotation of the base pattern
+            # This logic mimics the forward rotation in dungeon_room_get_connections
+            rotated_pattern = [False] * DOOR_COUNT
+            for i in range(DOOR_COUNT):
+                rotated_i = (i + r) % DOOR_COUNT
+                rotated_pattern[rotated_i] = base_pattern[i]
+            
+            # Check if this block + rotation matches our requirements
+            if tuple(rotated_pattern) == connections:
+                return dungeon_room_create(block_id, r)
+
+    # Fallback to solid block if no match is found
+    return dungeon_room_create(BLOCK_SOLID, 0)
 
 def dungeon_get_room_distance(room1: RoomPosT, room2: RoomPosT) -> int:
     """
@@ -336,6 +377,53 @@ def dungeon_get_valid_neighbor_rooms(dungeon: DungeonT, current_room_pos: RoomPo
             valid_neighbors.append(new_pos)
             
     return valid_neighbors
+
+def dungeon_pick_refined_room(dungeon, r, c, must_have: set[int]) -> RoomT:
+    """
+    Refined selection logic to allow QUADS while maintaining layout structure.
+    """
+    # Rule 1: No adjacent QUAD blocks
+    has_quad_neighbor = False
+    for dr, dc in [(-1, 0), (0, -1)]:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < len(dungeon) and 0 <= nc < len(dungeon[0]):
+            if dungeon[nr][nc][ROOM_BLOCK_ID] == BLOCK_QUAD:
+                has_quad_neighbor = True
+                break
+
+    primary_options = []
+    secondary_options = []
+    
+    # 25% chance to "prefer" a Quad if neighbors allow it
+    prefer_quad = random.random() < 0.25 and not has_quad_neighbor
+
+    for b_id in [BLOCK_SINGLE, BLOCK_DOUBLE_ADJACENT, BLOCK_DOUBLE_OPPOSITE, BLOCK_TRIPLE, BLOCK_QUAD]:
+        for rot in range(4):
+            room = dungeon_room_create(b_id, rot)
+            conns = dungeon_room_get_connections(room)
+            
+            if not all(conns[door] for door in must_have):
+                continue
+            
+            if b_id == BLOCK_QUAD:
+                if not has_quad_neighbor:
+                    if prefer_quad:
+                        # If we prefer a quad, it becomes the only primary option
+                        return room 
+                    secondary_options.append(room)
+            elif b_id in [BLOCK_TRIPLE, BLOCK_DOUBLE_ADJACENT, BLOCK_DOUBLE_OPPOSITE]:
+                primary_options.append(room)
+
+    # 1. Try Triples/Doubles first (standard maze feel)
+    if primary_options:
+        return random.choice(primary_options)
+    
+    # 2. If no complex blocks fit, use a Quad (if neighbor isn't one)
+    if secondary_options:
+        return random.choice(secondary_options)
+        
+    # 3. Ultimate fallback to Quad (even if neighbor is one) to prevent solid walls
+    return dungeon_room_create(BLOCK_QUAD, 0)
 
 # returns True if successfuly rotated room
 def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:

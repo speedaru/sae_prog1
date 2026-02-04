@@ -1,4 +1,5 @@
 from types import NoneType
+from functools import total_ordering
 
 import libs.fltk as fltk
 import src.utils.fltk_extensions as fltk_ext
@@ -16,18 +17,45 @@ class ScreenPosT:
     def to_tuple(self) -> tuple[int, int]:
         return (self.x, self.y)
 
+@total_ordering
 class SizeT:
     def __init__(self, width: int, height: int):
         self.width = width
         self.height = height
 
     def is_null(self):
-        return self.width == 0 and self.height == 0;
+        return self.width == 0 and self.height == 0
+
+    def __str__(self):
+        return f"{self.width}x{self.height}"
+
+    def __eq__(self, other):
+        if not isinstance(other, SizeT):
+            return NotImplemented
+        return self.width == other.width and self.height == other.height
+
+    def __lt__(self, other):
+        if not isinstance(other, SizeT):
+            return NotImplemented
+        # Compare width first; if widths are equal, compare height
+        if self.width != other.width:
+            return self.width < other.width
+        return self.height < other.height
 
 class RectT:
     def __init__(self, tl: ScreenPosT, br: ScreenPosT):
         self.tl = tl
         self.br = br
+
+
+def do_button(ev: FltkEvent | NoneType, rect: RectT) -> bool:
+    """
+    just handle as if a button at this position and size
+    """
+    if ev != None:
+        click_pos: tuple = fltk_ext.position_souris(ev)
+        return geom.in_rectangle(click_pos, rect.tl.to_tuple(), rect.br.to_tuple())
+    return False
 
 def button(ev: FltkEvent | NoneType, pos, text: str,
            size = (0, 0), # if 0, size will be auto
@@ -59,7 +87,4 @@ def button(ev: FltkEvent | NoneType, pos, text: str,
 
     fltk.texte(rect_middle.x, rect_middle.y, text, taille=font_size, couleur=text_color, ancrage="center")
 
-    if ev != None:
-        click_pos: tuple = fltk_ext.position_souris(ev)
-        return geom.in_rectangle(click_pos, rect.tl.to_tuple(), rect.br.to_tuple())
-    return False
+    return do_button(ev, rect)

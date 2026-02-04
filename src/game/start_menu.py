@@ -160,10 +160,11 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
 
         y += text_size[1] + PADDING_Y
 
+    # random dungeon button
     text = "random dungeon"
-    pos = (gui_geom.calculate_center_x(fltk.taille_texte(text, taille=font_size)[0]), y)
-    if ui.button(ev, pos, text, text_color="yellow", font_size=font_size, outline_color="white", outline_size=2, inner_padding=12):
-        pass
+    pos = (gui_geom.calculate_text_center_x(text, font_size), y)
+    if ui.button(ev, pos, text, font_size=font_size, outline_color="yellow", outline_size=2, inner_padding=12):
+        game_context[T_GAME_CTX_ACTIVE_WINDOW] = E_WINDOW_RANDOM_DUNGEON
 
     # if left clicked pressed return selected dungeon as EventDataT
     if fltk.type_ev(ev) == KEY_X1:

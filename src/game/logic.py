@@ -46,8 +46,8 @@ def _move_dragons_randomly(game_context: GameContextT):
     and updates its position in the game state.
     """
     game_data = game_context[T_GAME_CTX_GAME_DATA]
-    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
     dragons: list = entity_system_get_all(entity_system, E_ENTITY_DRAGON)
@@ -147,7 +147,9 @@ def load_game_data(game_context, game_data: GameDataT):
     """
     function to load a new game
     """
-    game_context[T_GAME_CTX_GAME_DATA][:] = deepcopy(game_data)
+    # if game_data is not litterally game_context[T_GAME_CTX_GAME_DATA]
+    if not game_context[T_GAME_CTX_GAME_DATA] is game_data:
+        game_context[T_GAME_CTX_GAME_DATA][:] = deepcopy(game_data)
 
     # init game systems
     game_systems_setup(game_context)
@@ -160,6 +162,7 @@ def reset_game_context(game_context):
     # recreate new game context from scratch basicly
     game_context[:] = game_context_create(assets=game_context[T_GAME_CTX_ASSETS],
                                           game_flags=GAME_FLAGS_STARTUP,
+                                          active_window=E_WINDOW_START,
                                           event=input_event_create(),
                                           game_data=game_data_init(),
                                           original_game_data=game_data_init(),
@@ -216,7 +219,7 @@ def should_finish_round(game_context: GameContextT) -> bool:
         adventurer reached end of path
         and adventurer moving flag has not been removed yet
     """
-    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
     game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
 
@@ -227,7 +230,7 @@ def should_finish_round(game_context: GameContextT) -> bool:
 
 def rotate_room(event_info: InputEventInfoT, game_context: GameContextT) -> bool:
     game_data = game_context[T_GAME_CTX_GAME_DATA]
-    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
 
     # cant rotate room in extreme mode past round 1
     if extreme_mode_past_first_round(game_context):
@@ -248,15 +251,15 @@ def place_treasure(event_info: InputEventInfoT, game_context: GameContextT) -> b
     room_pos: room position in which to place the treasure
     """
     game_data = game_context[T_GAME_CTX_GAME_DATA]
-    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
     # cant place treasure in extreme mode past round 1
     if extreme_mode_past_first_round(game_context):
         return False
 
     # skip if no more treasures left
-    treasure_count: int = game_data[T_GAME_DATA_TREASURE_COUNT]
+    treasure_count: int = game_data[T_DUNGEON_DATA_TREASURE_COUNT]
     if treasure_count <= 0:
         return False
 
@@ -284,7 +287,7 @@ def place_treasure(event_info: InputEventInfoT, game_context: GameContextT) -> b
     entity_system_add_entity(entity_system, treasure)
 
     # decrease treasure count since we placed a treasure
-    game_data[T_GAME_DATA_TREASURE_COUNT] -= 1
+    game_data[T_DUNGEON_DATA_TREASURE_COUNT] -= 1
     return True
 
 def manually_update_player_path(event_info: InputEventInfoT, game_context: GameContextT):
@@ -297,18 +300,18 @@ def manually_update_player_path(event_info: InputEventInfoT, game_context: GameC
     clicked_room_pos: RoomPosT = (clicked_room_col, clicked_room_row)
 
     # if cursor outside of dungeon do nothing
-    dungeon: DungeonT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_DUNGEON]
+    dungeon: DungeonT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_DUNGEON]
     if clicked_room_row >= dungeon_get_width(dungeon) or clicked_room_col >= dungeon_get_height(dungeon):
         return
 
-    adventurer: AdventurerT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_ENTITY_SYSTEM][T_ENTITIES_ADVENTURER]
+    adventurer: AdventurerT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM][T_ENTITIES_ADVENTURER]
 
     # init adventurer path if its None
     if adventurer[T_ADVENTURER_PATH] == None:
         adventurer[T_ADVENTURER_PATH] = MovementPathT()
 
     # ensure previous room adjacent and connected to clicked pos
-    dungeon: DungeonT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_DUNGEON]
+    dungeon: DungeonT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_DUNGEON]
     movement_path: MovementPathT = adventurer[T_ADVENTURER_PATH]
     previous_clicked_room_pos: RoomPosT = adventurer[T_BASE_ENTITY_ROOM_POS] # set last click room to player pos if 0 clicks
     if len(movement_path) > 0: # if not first click then set previous click room to last click pos
@@ -340,12 +343,13 @@ def update_player_path(game_event: GameEventT):
     """
     game_context: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
     game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
+    window: WindowE = game_context[T_GAME_CTX_ACTIVE_WINDOW]
 
     # not in game
-    if not bool(game_flags & F_GAME_GAME):
+    if window != E_WINDOW_GAME:
         return
 
-    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
 
     # UPDATE_PATH is set so we need to recalculate the path
@@ -360,7 +364,7 @@ def do_collisions(game_context: GameContextT):
     """
     GAME EVENT
     """
-    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
 
     adventurer = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
     dragons: list = entity_system_get_all(entity_system, E_ENTITY_DRAGON)
@@ -385,7 +389,7 @@ def move_adventurer_along_path(game_event: GameEventT):
     """
     game_context: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
 
-    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
 
     # dont move adventurer if:
@@ -404,7 +408,7 @@ def adventurer_sleep_between_steps(game_event: GameEventT):
     sleep in between each adventurer step, but dont sleep if round finished
     """
     game_context: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
-    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
 
     # dont sleep if:
@@ -443,7 +447,7 @@ def pickup_items(game_event: GameEventT):
     if any items is in room_poos then it will pick it up and place it in inventory
     """
     game_data = game_event[T_GAME_EVENT_GAME_CTX][T_GAME_CTX_GAME_DATA]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
 
     entity_items = entity_system_get_all_types(entity_system, ENTITY_ITEMS)
@@ -478,7 +482,7 @@ def instaconsume_items(game_event: GameEventT):
     """
     game_ctx = game_event[T_GAME_EVENT_GAME_CTX]
     game_data = game_ctx[T_GAME_CTX_GAME_DATA]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
 
     inventory: InventoryT = adventurer[T_ADVENTURER_INVENTORY]
@@ -487,6 +491,8 @@ def instaconsume_items(game_event: GameEventT):
         # check if is instanconsume item
         if inventory_item[T_INVENTORY_ITEM_TYPE] in ENTITY_ITEMS_INSTACONSUME:
             inventory_consume_item(inventory, inventory_item, callback_param=game_ctx)
+
+    invalidate_adventurer_path(game_ctx)
 
 def stop_moving_adventurer(game_event: GameEventT):
     """
@@ -602,9 +608,14 @@ def handle_game_systems(game_context: GameContextT):
 
 def handle_logic(game_context: GameContextT):
     fps_manager: FpsManagerT = game_context[T_GAME_CTX_FPS_MANAGER]
-    game_flags: GameFlags = game_context[T_GAME_CTX_GAME_FLAGS]
+    window: WindowE = game_context[T_GAME_CTX_ACTIVE_WINDOW]
 
-    if game_flags & F_GAME_GAME:
+    # dont do game logic if game finihsed
+    game_finished = bool(game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_GAME_FINISHED)
+    if game_finished:
+        return
+
+    if window == E_WINDOW_GAME:
         # handle_game_logic(game_context)
         handle_game_systems(game_context)
 

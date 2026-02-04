@@ -1,3 +1,5 @@
+import random
+
 from src.engine.structs.entity import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.dragon import *
@@ -69,6 +71,41 @@ def find_path(dungeon: DungeonT, start_room: RoomPosT, target_room: RoomPosT) ->
                 
     return []
 
+def find_random_path(dungeon: DungeonT, start_room: RoomPosT, target_room: RoomPosT) -> MovementPathT:
+    """
+    Calculates a random path to the target room by randomly picking from the 
+    available frontier of discovered rooms.
+    """
+    if start_room == target_room:
+        return []
+
+    # The frontier contains (current_pos, path_taken)
+    frontier = [(start_room, [])]
+    visited = {start_room}
+
+    while len(frontier) > 0:
+        # Instead of pop(0) for BFS, we pick a random index
+        random_index = random.randrange(len(frontier))
+        current_pos, path = frontier.pop(random_index)
+
+        # If arrived
+        if current_pos == target_room:
+            return path
+        
+        # Exploration of valid locations 
+        valid_neighbors = dungeon_get_valid_neighbor_rooms(dungeon, current_pos)
+        
+        # Shuffle neighbors to add extra randomness to the discovery order
+        random.shuffle(valid_neighbors)
+        
+        for neighbor in valid_neighbors:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                new_path = path + [neighbor]
+                frontier.append((neighbor, new_path))
+                
+    return []
+
 def is_valid_path(dungeon: DungeonT, start_pos: RoomPosT, path: MovementPathT) -> bool:
     # Checks if the path is valid step by step.
     current = start_pos
@@ -81,6 +118,12 @@ def is_valid_path(dungeon: DungeonT, start_pos: RoomPosT, path: MovementPathT) -
 def room_is_accessible(dungeon: DungeonT, adventurer: AdventurerT, target_room: RoomPosT):
     path = find_path(dungeon, adventurer[T_BASE_ENTITY_ROOM_POS], target_room)
     return len(path) != 0
+
+def find_random_path_to_dragon(dungeon: DungeonT, adventurer: AdventurerT, dragon: DragonT) -> MovementPathT:
+    """
+    returns: path from adventurer room to dragons room, returns None if no valid path is found
+    """
+    return find_random_path(dungeon, adventurer[T_BASE_ENTITY_ROOM_POS], dragon[T_BASE_ENTITY_ROOM_POS])
 
 def find_meanest_dragon(dungeon: DungeonT, adventurer: AdventurerT, dragons: list[DragonT]) -> DragonT:
     """
@@ -115,8 +158,8 @@ def path_stop_at_collision(entity_system: EntitySystemT, path: MovementPathT) ->
     return new_path
 
 def find_and_set_adventurer_path(game_data: GameDataT):
-    dungeon: DungeonT = game_data[T_GAME_DATA_DUNGEON]
-    entity_system: EntitySystemT = game_data[T_GAME_DATA_ENTITY_SYSTEM]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
+    entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
     # get entities
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
