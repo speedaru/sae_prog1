@@ -107,6 +107,8 @@ def render(game_context: GameContextT) -> GameEventDataT | NoneType:
     text = "OK"
     pos = (gui_geom.calculate_text_center_x(text, FONT_SIZE), y + 40)
     if ui.button(ev, pos, text, font_size=FONT_SIZE, text_color=TEXT_COLOR, outline_color="yellow", outline_size=2, inner_padding=8):
-        return dungeon_generator.generate_dungeon_data(settings)
+        dungeon_data = dungeon_generator.generate_dungeon_data(settings)
+        dungeon_data[T_DUNGEON_DATA_GAME_MODE] = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_GAME_MODE]
+        return dungeon_data
 
     return None

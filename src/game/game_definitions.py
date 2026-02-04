@@ -77,14 +77,14 @@ DungeonDataT = list[DungeonT | EntitySystemT | int | None]
 T_DUNGEON_DATA_DUNGEON = 0 # DungeonT
 T_DUNGEON_DATA_ENTITY_SYSTEM = 1 # EntitySystemT
 T_DUNGEON_DATA_TREASURE_COUNT = 2 # treasure count left in dungeon (mutable)
-T_DUNGEON_DATA_COUNT = 3
+T_DUNGEON_DATA_GAME_MODE = 3 # GameModeE
+T_DUNGEON_DATA_COUNT = 4
 
 # dungeon data but with extra stuff like game mode round counter etc...
 GameDataT = list[DungeonT | EntitySystemT | int | None]
 T_GAME_DATA_EVENT_SYSTEM = T_DUNGEON_DATA_COUNT + 0 # GameEventSystemT
-T_GAME_DATA_GAME_MODE = T_DUNGEON_DATA_COUNT + 1 # GameModeE
-T_GAME_DATA_ROUND = T_DUNGEON_DATA_COUNT + 2 # round counter (starts at 1)
-T_GAME_DATA_COUNT = T_DUNGEON_DATA_COUNT + 3
+T_GAME_DATA_ROUND = T_DUNGEON_DATA_COUNT + 1 # round counter (starts at 1)
+T_GAME_DATA_COUNT = T_DUNGEON_DATA_COUNT + 2
 
 def dungeon_data_init(size = T_DUNGEON_DATA_COUNT) -> DungeonDataT:
     # dungeon
@@ -95,6 +95,7 @@ def dungeon_data_init(size = T_DUNGEON_DATA_COUNT) -> DungeonDataT:
     dungeon_data[T_DUNGEON_DATA_DUNGEON] = dungeon
     dungeon_data[T_DUNGEON_DATA_ENTITY_SYSTEM] = entity_system_create()
     dungeon_data[T_DUNGEON_DATA_TREASURE_COUNT] = 0
+    dungeon_data[T_DUNGEON_DATA_GAME_MODE] = E_GAME_MODE_NORMAL
 
     return dungeon_data
 
@@ -102,7 +103,6 @@ def game_data_init() -> GameDataT:
     game_data = dungeon_data_init(T_GAME_DATA_COUNT)
 
     game_data[T_GAME_DATA_EVENT_SYSTEM] = game_event_system_create()
-    game_data[T_GAME_DATA_GAME_MODE] = E_GAME_MODE_NORMAL
     game_data[T_GAME_DATA_ROUND] = 1
 
     return game_data
