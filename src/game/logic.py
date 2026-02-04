@@ -147,6 +147,9 @@ def load_game_data(game_context, game_data: GameDataT):
     """
     function to load a new game
     """
+    # just in case, reset event system so we dont deep copy it
+    game_data[T_GAME_DATA_EVENT_SYSTEM] = game_event_system_create()
+
     # if game_data is not litterally game_context[T_GAME_CTX_GAME_DATA]
     if not game_context[T_GAME_CTX_GAME_DATA] is game_data:
         game_context[T_GAME_CTX_GAME_DATA][:] = deepcopy(game_data)
@@ -187,7 +190,7 @@ def start_moving_adventurer(game_context):
 
 def extreme_mode_past_first_round(game_context):
     game_data = game_context[T_GAME_CTX_GAME_DATA]
-    return game_data[T_GAME_DATA_GAME_MODE] == E_GAME_MODE_EXTREME and game_data[T_GAME_DATA_ROUND] > 1
+    return game_data[T_DUNGEON_DATA_GAME_MODE] == E_GAME_MODE_EXTREME and game_data[T_GAME_DATA_ROUND] > 1
 
 # def can_remove_moving_flag(game_context):
 #     """
@@ -435,7 +438,7 @@ def adventurer_sleep_between_rounds(game_event: GameEventT):
         return
 
     # not in extreme mode
-    if game_data[T_GAME_DATA_GAME_MODE] != E_GAME_MODE_EXTREME:
+    if game_data[T_DUNGEON_DATA_GAME_MODE] != E_GAME_MODE_EXTREME:
         return
 
     # sleep

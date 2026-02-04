@@ -25,15 +25,20 @@ class DungeonSettingsT:
     strong_sword_count: SettingT
     chaos_seal_count: SettingT
 
-def _random_room_pos(max_room_idx: int, entity_system) -> RoomPosT:
+def _random_room_pos(max_room: int, entity_system) -> RoomPosT:
     used_rooms = entity_utils.get_all_entity_positions(entity_system)
     
-    random_row: int = choice([row for row in range(max_room_idx)])
+    available_rooms = list()
+    for row in range(max_room):
+        for col in range(max_room):
+            room_pos = room_pos_create(row=row, col=col)
+            if room_pos not in used_rooms:
+                available_rooms.append(room_pos)
 
-    # pick a random col so that the random is not in used rooms
-    random_col: int = choice([col for col in range(max_room_idx) if not room_pos_create(col=col, row=random_row) in used_rooms])
-
-    return room_pos_create(col=random_col, row=random_row)
+    if len(available_rooms) > 0:
+        return choice(available_rooms)
+    else:
+        return INVALID_ROOM_POS
 
 def _generate_adventurer(dungeon_data, settings: DungeonSettingsT):
     es = dungeon_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
@@ -45,12 +50,13 @@ def _generate_adventurer(dungeon_data, settings: DungeonSettingsT):
 def _generate_dragons(dungeon_data, settings: DungeonSettingsT):
     es = dungeon_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
-    max_room_idx = settings.dungeon_size.val.width - 1
+    max_room = settings.dungeon_size.val.width
 
     # generate dragons from level 1 -> dragon_count
     for i in range(settings.dragon_count.val):
-        random_room = _random_room_pos(max_room_idx, es)
-        entity_system_add_entity(es, dragon_create(random_room, i + 1))
+        random_room = _random_room_pos(max_room, es)
+        if random_room != INVALID_ROOM_POS:
+            entity_system_add_entity(es, dragon_create(random_room, i + 1))
 
 def _mark_required_doors(pos_a, pos_b, requirements):
     if pos_a not in requirements: requirements[pos_a] = set()
@@ -152,11 +158,12 @@ def _generate_items(dungeon_data, settings: DungeonSettingsT):
             (settings.chaos_seal_count.val, chaos_seal_create),
     ]
 
-    max_room_idx = settings.dungeon_size.val.width - 1
+    max_room = settings.dungeon_size.val.width
     for count, creation_callback in entity_create_callback_table:
         for i in range(count):
-            room_pos = _random_room_pos(max_room_idx, es)
-            entity_system_add_entity(es, creation_callback(room_pos))
+            room_pos = _random_room_pos(max_room, es)
+            if room_pos != INVALID_ROOM_POS:
+                entity_system_add_entity(es, creation_callback(room_pos))
 
 def generate_dungeon_data(settings: DungeonSettingsT):
     dungeon_data = dungeon_data_init()

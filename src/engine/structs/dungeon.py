@@ -28,6 +28,8 @@ ROOM_POS_COL = 0
 ROOM_POS_ROW = 1
 ROOM_POS_COUNT = 2
 
+INVALID_ROOM_POS = (-1, -1)
+
 DungeonSizeT = RoomPosT # alias cuz also cols x rows
 DUNGEON_SIZE_COL = ROOM_POS_COL
 DUNGEON_SIZE_ROW = ROOM_POS_ROW

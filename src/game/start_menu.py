@@ -117,15 +117,15 @@ def render(game_context: GameContextT) -> GameDataT | NoneType:
     fltk.image(0,0,background_path,ancrage="nw")
 
     # game mode
-    game_mode: GameModeE = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_GAME_MODE]
+    game_mode: GameModeE = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_GAME_MODE]
     text = f"Mode de jeu: {get_game_mode_text(game_mode)}"
     font_size = 24
     pos = gui_geom.anchor_text(gui_geom.E_UI_ANCHOR_BOTTOM_LEFT, text, font_size, padding=20)
     color = "red" if game_mode == E_GAME_MODE_EXTREME else "yellow"
     if ui.button(ev, pos, text, text_color=color, font_size=font_size):
         game_data = game_context[T_GAME_CTX_GAME_DATA]
-        current_mode = game_data[T_GAME_DATA_GAME_MODE]
-        game_data[T_GAME_DATA_GAME_MODE] = (current_mode + 1) % E_GAME_MODE_COUNT
+        current_mode = game_data[T_DUNGEON_DATA_GAME_MODE]
+        game_data[T_DUNGEON_DATA_GAME_MODE] = (current_mode + 1) % E_GAME_MODE_COUNT
 
     # retrieving dungeon files
     path_dungeons = Path(DUNGEON_FILES_DIR)

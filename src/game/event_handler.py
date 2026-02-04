@@ -1,4 +1,5 @@
 from types import NoneType
+from copy import deepcopy
 
 import libs.fltk as fltk
 from libs.fltk import FltkEvent, TkEvent
@@ -31,13 +32,16 @@ def handle_exit_key(input_event: InputEventT, game_context):
 
     exit_key_pressed = event_info[INPUT_EVENT_INFO_IS_KEY] and event_info[INPUT_EVENT_INFO_KEY_PRESSED] == EXIT_KEY.lower()
 
+    # do nothing if exit key not pressed
+    if not exit_key_pressed:
+        return
+
     # start menu -> exit game
-    if exit_key_pressed and window == E_WINDOW_START:
+    if window == E_WINDOW_START:
         game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_EXIT_PROGRAM
-    # game screen -> go back to start menu
-    elif exit_key_pressed:
-        # reset game context to startup value
-        logic.reset_game_context(game_context)
+        return
+
+    logic.reset_game_context(game_context)
 
 def handle_event_start_menu(input_event: InputEventT, game_context: GameContextT):
     """
