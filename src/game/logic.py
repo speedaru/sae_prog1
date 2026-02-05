@@ -395,6 +395,15 @@ def move_adventurer_along_path(game_event: GameEventT):
     entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
 
+    # if in single turn mode and cant move then lost
+    adventurer_path = adventurer[T_ADVENTURER_PATH]
+    single_turn_active = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_GAME_MODE] == E_GAME_MODE_SINGLE_TURN
+    if not movement_path_is_valid(adventurer_path) and single_turn_active:
+        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_GAME_FINISHED | F_GAME_GAME_LOST
+        game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_ADVENTURER_MOVING
+        log_debug("finished")
+        return
+
     # dont move adventurer if:
     #   ADVENTURER_MOVING flag is not set
     #   or path is empty

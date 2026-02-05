@@ -1,6 +1,8 @@
 import libs.fltk as fltk
 from libs.fltk import FltkEvent, PhotoImage, Anchor
 
+# from src.game.game_definitions import WINDOW_SIZE
+
 
 # constants
 FLTK_EVENT_EV_TYPE = 0
@@ -58,3 +60,16 @@ def position_souris(ev: FltkEvent) -> tuple[int, int]:
     x, y = fltk.abscisse(ev), fltk.ordonnee(ev)
     assert isinstance(x, int) and isinstance(y, int)
     return (x, y)
+
+def taille_ecran() -> tuple[int, int]:
+    root = fltk.__canevas.root
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    return screen_width, screen_height
+
+def fenetre_changer_position(window_size: list[int], x, y):
+    root = fltk.__canevas.root
+
+    size = f"{window_size[0]}x{window_size[1]}"
+    pos = f"{x}+{y}"
+    root.geometry(f"{size}+{pos}")
