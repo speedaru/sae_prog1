@@ -29,16 +29,18 @@ def _get_clicked_room(event_info: InputEventInfoT, dungeon: DungeonT) -> RoomPos
     ev: FltkEvent = event_info[INPUT_EVENT_INFO_EV]
     click_postion = fltk_ext.position_souris(ev)
 
-    # rotate room at click positons
-    clicked_room_col = click_postion[0] // BLOCK_SCALED_SIZE[0] # x
-    clicked_room_row = click_postion[1] // BLOCK_SCALED_SIZE[1] # y
-    clicked_room: RoomPosT = room_pos_create(col=clicked_room_col, row=clicked_room_row)
+    # get cliked room, and check if its None (clciked outside of dungeon)
+    clicked_room = dungeon_get_room_pos_from_screen_pos(dungeon, click_postion)
+    if clicked_room == None:
+        return
+
+    clicked_room_pos: RoomPosT = clicked_room
 
     # if cursor outside of dungeon do nothing
-    if not dungeon_room_pos_in_bounds(dungeon, clicked_room):
+    if not dungeon_room_pos_in_bounds(dungeon, clicked_room_pos):
         return None
 
-    return clicked_room
+    return clicked_room_pos
 
 def _move_dragons_randomly(game_context: GameContextT):
     """
@@ -390,24 +392,23 @@ def move_adventurer_along_path(game_event: GameEventT):
     GAME EVENT
     continue moving the adventurer to the next room
     """
-    game_context: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
+    game_ctx: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
 
-    entity_system: EntitySystemT = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
+    entity_system: EntitySystemT = game_ctx[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_ENTITY_SYSTEM]
     adventurer: AdventurerT = entity_system_get_first_and_only(entity_system, E_ENTITY_ADVENTURER)
 
     # if in single turn mode and cant move then lost
     adventurer_path = adventurer[T_ADVENTURER_PATH]
-    single_turn_active = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_GAME_MODE] == E_GAME_MODE_SINGLE_TURN
-    if not movement_path_is_valid(adventurer_path) and single_turn_active:
-        game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_GAME_FINISHED | F_GAME_GAME_LOST
-        game_context[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_ADVENTURER_MOVING
+    if not movement_path_is_valid(adventurer_path) and single_turn_mode_past_first_round(game_ctx):
+        game_ctx[T_GAME_CTX_GAME_FLAGS] |= F_GAME_GAME_FINISHED | F_GAME_GAME_LOST
+        game_ctx[T_GAME_CTX_GAME_FLAGS] &= ~F_GAME_ADVENTURER_MOVING
         log_debug("finished")
         return
 
     # dont move adventurer if:
     #   ADVENTURER_MOVING flag is not set
     #   or path is empty
-    game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
+    game_flags: int = game_ctx[T_GAME_CTX_GAME_FLAGS]
     if not (game_flags & F_GAME_ADVENTURER_MOVING) or not movement_path_is_valid(adventurer[T_ADVENTURER_PATH]):
         return
 

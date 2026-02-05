@@ -23,15 +23,15 @@ def create_window(window_title: str, icon_file: str):
     Note:
         This function triggers graphical calls and cannot be tested via doctest.
     """
-    width = game_config.WINDOW_SIZE[0]
-    height = game_config.WINDOW_SIZE[1]
+    width = game_config.g_window_size[0]
+    height = game_config.g_window_size[1]
 
     fltk.cree_fenetre(width, height, engine_config.TARGET_FPS)
     fltk_ext.fenetre_titre(window_title)
 
     screen_size = fltk_ext.taille_ecran()
     center_screen = ((screen_size[0] // 2 - width // 2), (screen_size[1] // 2 - height // 2))
-    fltk_ext.fenetre_changer_position(game_config.WINDOW_SIZE, center_screen[0], center_screen[1])
+    fltk_ext.fenetre_changer_position(game_config.g_window_size, center_screen[0], center_screen[1])
 
     log_debug(f"os name: {os.name}")
 

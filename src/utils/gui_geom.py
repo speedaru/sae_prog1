@@ -20,13 +20,13 @@ DEFAULT_FONT_SIZE = 18
 
 
 def get_center() -> ScreenPosT:
-    return (WINDOW_SIZE[0] // 2, WINDOW_SIZE[1] // 2)
+    return (g_window_size[0] // 2, g_window_size[1] // 2)
 
 def get_center_x() -> int:
-    return WINDOW_SIZE[0] // 2
+    return g_window_size[0] // 2
 
 def get_center_y() -> int:
-    return WINDOW_SIZE[1] // 2
+    return g_window_size[1] // 2
 
 def calculate_center(item_size: ScreenPosT) -> ScreenPosT:
     return get_center_x() - (item_size[0] // 2), get_center_y() - (item_size[1] // 2)
@@ -51,7 +51,7 @@ def calculate_text_center_y(text: str, size: int = DEFAULT_FONT_SIZE) -> int:
 
 def anchor_item(anchor_pos: UIAnchorE, item_size: ScreenPosT, padding: int) -> ScreenPosT:
     item_w, item_h = item_size
-    screen_w, screen_h = WINDOW_SIZE
+    screen_w, screen_h = g_window_size
     x, y = 0, 0
     
     # horizontal calculation

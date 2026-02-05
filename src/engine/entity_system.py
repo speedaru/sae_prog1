@@ -162,19 +162,19 @@ def entity_system_remove_in_room(entity_system: EntitySystemT, entity_type: Enti
         if entity[T_BASE_ENTITY_TYPE] == entity_type and entity[T_BASE_ENTITY_ROOM_POS] == room_pos:
             entity_system.pop(i)
 
-def entity_system_render(entity_system: EntitySystemT, assets: AssetsT):
+def entity_system_render(dungeon, entity_system: EntitySystemT, assets: AssetsT):
     for base_entity in entity_system:
         if base_entity_is(base_entity, E_ENTITY_ADVENTURER):
-            adventurer_render(base_entity, assets)
-            adventurer_render_path(base_entity)
+            adventurer_render(dungeon, base_entity, assets)
+            adventurer_render_path(dungeon, base_entity)
         elif base_entity_is(base_entity, E_ENTITY_DRAGON):
-            dragon_render(base_entity, assets)
+            dragon_render(dungeon, base_entity, assets)
         elif base_entity_is(base_entity, E_ENTITY_TREASURE):
-            treasure_render(base_entity, assets)
+            treasure_render(dungeon, base_entity, assets)
         elif base_entity_is(base_entity, E_ENTITY_STRONG_SWORD):
-            strong_sword_render(base_entity, assets)
+            strong_sword_render(dungeon, base_entity, assets)
         elif base_entity_is(base_entity, E_ENTITY_CHAOS_SEAL):
-            chaos_seal_render(base_entity, assets)
+            chaos_seal_render(dungeon, base_entity, assets)
         else:
             log_warning(f"trying to render unknown entity (type: {base_entity[T_BASE_ENTITY_TYPE]}): {base_entity}")
 

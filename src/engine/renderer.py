@@ -1,6 +1,10 @@
+from src.engine.structs.dungeon import *
+from src.engine.entity_system import *
+
 import src.game.hud as hud
 import src.game.start_menu as start_menu
 import src.game.random_dungeon_selector as random_dungeon_selector
+from src.game.state_manager import *
 from src.game.game_definitions import *
 
 
@@ -16,6 +20,7 @@ def render_random_dungeon_selector(game_context: GameContextT) -> GameEventDataT
 def render_game(game_context: GameContextT):
     assets: AssetsT = game_context[T_GAME_CTX_ASSETS]
     game_data: GameDataT = game_context[T_GAME_CTX_GAME_DATA]
+    dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
     entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
     dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
@@ -28,7 +33,7 @@ def render_game(game_context: GameContextT):
     # render entities
     if entity_system != None:
         log_debug_full("rendering entities . . .")
-        entity_system_render(entity_system, assets)
+        entity_system_render(dungeon, entity_system, assets)
 
     # render hud
     hud_elements = hud.get_hud_elements(game_context)
@@ -49,7 +54,7 @@ def render_game_end(game_context: GameContextT):
 
     message_size = fltk.taille_texte(message, taille=GAME_END_MESSAGE_FONT_SIZE)
     message_size = fltk.taille_texte(message, taille=GAME_END_MESSAGE_FONT_SIZE)
-    center_x, center_y = (WINDOW_SIZE[0] / 2) - (message_size[0] / 2), (WINDOW_SIZE[1] / 2) - (message_size[1] / 2)
+    center_x, center_y = (g_window_size[0] / 2) - (message_size[0] / 2), (g_window_size[1] / 2) - (message_size[1] / 2)
     fltk.texte(center_x, center_y - 50, message, couleur=message_color, taille=GAME_END_MESSAGE_FONT_SIZE)
 
     # so it calls event handler to then update game state to STATE_EXIT

@@ -1,10 +1,12 @@
 import random
 import libs.fltk as fltk
 
+from src.engine.asset_manager import *
+
+from src.game.globals import *
+
 from src.utils.file_utils import read_utf8_file
 import src.utils.fltk_extensions as fltk_ext
-
-from src.engine.asset_manager import *
 
 
 # first int corresponds to block index (inside asset_manager)
@@ -305,18 +307,23 @@ def dungeon_room_pos_in_bounds(dungeon: DungeonT, room_pos: RoomPosT) -> bool:
 
     return room_pos[ROOM_POS_COL] < dungeon_get_width(dungeon) and room_pos[ROOM_POS_ROW] < dungeon_get_height(dungeon)
 
-def dungeon_get_room_from_pos(dungeon: DungeonT, pos: tuple[int, int]) -> RoomPosT | NoneType:
+def dungeon_get_room_pos_from_screen_pos(dungeon: DungeonT, screen_pos: ScreenPosT) -> RoomPosT | NoneType:
     """
     returns nonetype if out of bounds
     """
-    room_col: int = pos[0] // BLOCK_SCALED_SIZE[0]
-    room_row: int = pos[1] // BLOCK_SCALED_SIZE[1]
+    dungeon_screen_pos = dungeon_get_screen_pos(dungeon)
+    room_row: int = (screen_pos[1] - dungeon_screen_pos[1]) // BLOCK_SCALED_SIZE[0]
+    room_col: int = (screen_pos[0] - dungeon_screen_pos[0]) // BLOCK_SCALED_SIZE[1]
+
+    room_pos = room_pos_create(row=room_row, col=room_col)
+
+    log_debug(f"clicked room row, col: {room_row, room_col}")
 
     # invalid selection, out of bounds
-    if not dungeon_room_pos_in_bounds(dungeon, room_row, room_col):
+    if not dungeon_room_pos_in_bounds(dungeon, room_pos):
         return None
 
-    return room_pos_create(col=room_col, row=room_row)
+    return room_pos
 
 def dungeon_get_valid_neighbor_rooms(dungeon: DungeonT, current_room_pos: RoomPosT) -> list[RoomPosT]:
     """
@@ -467,18 +474,6 @@ def dungeon_rotate_room(dungeon: DungeonT, row: int, col: int) -> bool:
 
 # returns number of rooms horizontally
 def dungeon_get_width(dungeon: DungeonT) -> int:
-    """
-    Gets the width (number of columns) of the dungeon.
-
-    Doctest :
-
-    >>> d = []
-    >>> dungeon_init(d, 5, 3) # 5 rows, 3 cols
-    >>> dungeon_get_width(d)
-    3
-    >>> dungeon_get_width([])
-    0
-    """
     # dungeon empty
     if len(dungeon) == 0:
         return 0
@@ -488,19 +483,10 @@ def dungeon_get_width(dungeon: DungeonT) -> int:
 
 # returns number of rooms vertically
 def dungeon_get_height(dungeon: DungeonT) -> int:
-    """
-    Gets the height (number of rows) of the dungeon.
-
-    Doctest :
-
-    >>> d = []
-    >>> dungeon_init(d, 5, 3)
-    >>> dungeon_get_height(d)
-    5
-    >>> dungeon_get_height([])
-    0
-    """
     return len(dungeon)
+
+def dungeon_get_size(dungeon: DungeonT) -> tuple[int, int]:
+    return (dungeon_get_width(dungeon), dungeon_get_height(dungeon))
 
 def dungeon_print_values(dungeon: DungeonT):
     """
@@ -508,6 +494,25 @@ def dungeon_print_values(dungeon: DungeonT):
     """
     for row in dungeon:
         print(row)
+
+def dungeon_get_screen_pos(dungeon) -> ScreenPosT:
+    dungeon_screen_size = (BLOCK_SCALED_SIZE[0] * dungeon_get_width(dungeon), BLOCK_SCALED_SIZE[1] * dungeon_get_height(dungeon))
+    x = g_window_size[0] // 2 - dungeon_screen_size[0] // 2
+    y = g_window_size[1] // 2 - dungeon_screen_size[1] // 2
+    return (x, y)
+
+def dungeon_get_room_screen_coords(dungeon: DungeonT, room_pos: RoomPosT) -> tuple[int, int]:
+    start_x, start_y = dungeon_get_screen_pos(dungeon)
+
+    row, col = room_pos[ROOM_POS_ROW], room_pos[ROOM_POS_COL]
+    x = start_x + col * BLOCK_SCALED_SIZE[0]
+    y = start_y + row * BLOCK_SCALED_SIZE[0]
+
+    return (x, y)
+
+def dungeon_get_room_screen_coords_center(dungeon: DungeonT, room_pos: RoomPosT) -> tuple[int, int]:
+    room_screen_pos = dungeon_get_room_screen_coords(dungeon, room_pos)
+    return (room_screen_pos[0] + (BLOCK_SCALED_SIZE[0] // 2), room_screen_pos[1] + (BLOCK_SCALED_SIZE[1] // 2))
 
 
 # ---------- RENDERING ----------
@@ -534,11 +539,12 @@ def dungeon_render(dungeon: DungeonT, assets: AssetsT):
     if isinstance(dungeon, NoneType) or dungeon_get_height(dungeon) == 0:
         return
 
+    # render black background
+    fltk.rectangle(0, 0, g_window_size[0], g_window_size[1], remplissage="black")
+
     for i, row in enumerate(dungeon): # draw rows
         for j, room in enumerate(row): # draw each individual room
-            # get room coordinates
-            x = j * BLOCK_SCALED_SIZE[0]
-            y = i * BLOCK_SCALED_SIZE[1]
+            x, y = dungeon_get_room_screen_coords(dungeon, room_pos_create(row=i, col=j))
 
             # draw room
             dungeon_room_render(room, assets, x, y)

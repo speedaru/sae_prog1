@@ -16,10 +16,10 @@ def treasure_create(room_pos: RoomPosT, image_id: int) -> TreasureT:
 def treasure_is_valid(treasure) -> bool:
     return treasure != None and isinstance(treasure, list) and len(treasure) == T_TREASURE_COUNT
 
-def treasure_render(treasure: TreasureT, assets: AssetsT):
+def treasure_render(dungeon, treasure: TreasureT, assets: AssetsT):
     if not treasure_is_valid(treasure):
         return
 
     image_id = treasure[T_TREASURE_IMAGE_ID]
     image = assets[T_ASSETS_ITEMS][image_id]
-    base_entity_render(treasure, image, ITEM_SIZES)
+    base_entity_render(dungeon, treasure, image, ITEM_SIZES)

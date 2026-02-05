@@ -53,7 +53,7 @@ def adventurer_create(room_pos: RoomPosT = room_pos_create(0, 0), level: int = 1
 
     return adventurer
 
-def adventurer_render(adventurer: AdventurerT, assets: AssetsT):
+def adventurer_render(dungeon, adventurer: AdventurerT, assets: AssetsT):
     """
     Renders the adventurer on the screen.
 
@@ -65,9 +65,9 @@ def adventurer_render(adventurer: AdventurerT, assets: AssetsT):
     """
     knight_image = assets[T_ASSETS_CHARACTERS][CHARACTERS_ADVENTURER]
 
-    entity_render(adventurer, knight_image)
+    entity_render(dungeon, adventurer, knight_image)
 
-def adventurer_render_path(adventurer: AdventurerT):
+def adventurer_render_path(dungeon, adventurer: AdventurerT):
     PATH_LINE_COLOR = "red"
     PATH_LINE_THICKNESS = 2
 
@@ -75,11 +75,16 @@ def adventurer_render_path(adventurer: AdventurerT):
     if movement_path == None or len(movement_path) == 0:
         return
 
-    # get center of adventurer pos to start drawing from there
-    start_x, start_y = geom.get_room_center_screen_pos(adventurer[T_BASE_ENTITY_ROOM_POS])
+    # start at adventurer posititon, then it becomes previous one
+    adventurer_pos = adventurer[T_BASE_ENTITY_ROOM_POS]
+    # start_x, start_y = geom.get_room_sreen_pos_center(dungeon_get_room_screen_coords(dungeon, adventurer_pos))
+    start_x, start_y = dungeon_get_room_screen_coords_center(dungeon, adventurer_pos)
 
     for room_pos in movement_path:
-        end_x, end_y = geom.get_room_center_screen_pos(room_pos)
+        end_x, end_y = dungeon_get_room_screen_coords_center(dungeon, room_pos)
+
         fltk.ligne(start_x, start_y, end_x, end_y, couleur=PATH_LINE_COLOR, epaisseur=PATH_LINE_THICKNESS)
+
+        # set next room start to current room end
         start_x, start_y = end_x, end_y
 

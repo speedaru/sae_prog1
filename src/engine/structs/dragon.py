@@ -48,7 +48,7 @@ def dragon_init():
 def dragon_create(room_pos: RoomPosT = room_pos_create(0, 0), level: int = 1):
     return entity_create(entity_type=E_ENTITY_DRAGON, room_pos=room_pos, level=level, entity_size=T_DRAGON_COUNT)
 
-def dragon_render(dragon: DragonT, assets: AssetsT):
+def dragon_render(dungeon, dragon: DragonT, assets: AssetsT):
     """
     Renders the dragon on the screen.
     
@@ -57,7 +57,7 @@ def dragon_render(dragon: DragonT, assets: AssetsT):
     """
     dragon_image = assets[T_ASSETS_CHARACTERS][CHARACTERS_DRAGONS]
 
-    entity_render(dragon, dragon_image)
+    entity_render(dungeon, dragon, dragon_image)
 
 # if no count set it will automatically calculate number of dragons
 def dragon_create_dragons(dragons: list[DragonT], dungeon_size: DungeonSizeT, count: int | NoneType = None):

@@ -28,28 +28,22 @@ from typing import Any
 
 from libs.fltk import FltkEvent
 
-from src.engine.asset_manager import AssetsT, BlockT, BlockListT, BLOCK_SCALED_SIZE
-from src.engine.entity_system import *
-from src.engine.game_event_system import *
-from src.engine.structs.dungeon import DungeonT, dungeon_init
-from src.engine.structs.adventurer import AdventurerT
-from src.engine.structs.dragon import DragonT
+import src.engine.structs.dungeon as dungeon_mod
+import src.engine.game_event_system as game_event_system_mod
+import src.engine.entity_system as entity_system_mod
+from src.engine.asset_manager import *
+
+from src.game.globals import *
 
 from src.game.state_manager import GameFlags
 from src.game.entity_definitions import *
 from src.game.keys import *
 
 
-# constants
-WINDOW_GRID_SIZE = [6, 6]
-WINDOW_SIZE = [WINDOW_GRID_SIZE[0] * BLOCK_SCALED_SIZE[0], WINDOW_GRID_SIZE[1] * BLOCK_SCALED_SIZE[1]]
-EXIT_KEY = KEY_ESCAPE
-DUNGEON_DRAGONS_COUNT = 3
-
 # types
 GameEventDataT = Any # to make it explicit when functions return event data
 InputEventT = list[FltkEvent | GameEventDataT] # data from game event
-GameContextT = list[AssetsT | InputEventT | DungeonT | GameFlags | NoneType | EntityT | AdventurerT | list[DragonT]]
+GameContextT = list
 
 # enum for game context
 T_GAME_CTX_ASSETS               = 0 # list of block images
@@ -74,7 +68,7 @@ E_GAME_MODE_EXTREME = 2
 E_GAME_MODE_COUNT = 3
 
 # simple dungeon with just the dungeon and whats inside
-DungeonDataT = list[DungeonT | EntitySystemT | int | None]
+DungeonDataT = list
 T_DUNGEON_DATA_DUNGEON = 0 # DungeonT
 T_DUNGEON_DATA_ENTITY_SYSTEM = 1 # EntitySystemT
 T_DUNGEON_DATA_TREASURE_COUNT = 2 # treasure count left in dungeon (mutable)
@@ -82,19 +76,19 @@ T_DUNGEON_DATA_GAME_MODE = 3 # GameModeE
 T_DUNGEON_DATA_COUNT = 4
 
 # dungeon data but with extra stuff like game mode round counter etc...
-GameDataT = list[DungeonT | EntitySystemT | int | None]
+GameDataT = list
 T_GAME_DATA_EVENT_SYSTEM = T_DUNGEON_DATA_COUNT + 0 # GameEventSystemT
 T_GAME_DATA_ROUND = T_DUNGEON_DATA_COUNT + 1 # round counter (starts at 1)
 T_GAME_DATA_COUNT = T_DUNGEON_DATA_COUNT + 2
 
 def dungeon_data_init(size = T_DUNGEON_DATA_COUNT) -> DungeonDataT:
     # dungeon
-    dungeon = DungeonT()
-    dungeon_init(dungeon, 0, 0)
+    dungeon = dungeon_mod.DungeonT()
+    dungeon_mod.dungeon_init(dungeon, 0, 0)
 
     dungeon_data: GameDataT = [None] * size
     dungeon_data[T_DUNGEON_DATA_DUNGEON] = dungeon
-    dungeon_data[T_DUNGEON_DATA_ENTITY_SYSTEM] = entity_system_create()
+    dungeon_data[T_DUNGEON_DATA_ENTITY_SYSTEM] = entity_system_mod.entity_system_create()
     dungeon_data[T_DUNGEON_DATA_TREASURE_COUNT] = 0
     dungeon_data[T_DUNGEON_DATA_GAME_MODE] = E_GAME_MODE_NORMAL
 
@@ -103,7 +97,7 @@ def dungeon_data_init(size = T_DUNGEON_DATA_COUNT) -> DungeonDataT:
 def game_data_init() -> GameDataT:
     game_data = dungeon_data_init(T_GAME_DATA_COUNT)
 
-    game_data[T_GAME_DATA_EVENT_SYSTEM] = game_event_system_create()
+    game_data[T_GAME_DATA_EVENT_SYSTEM] = game_event_system_mod.game_event_system_create()
     game_data[T_GAME_DATA_ROUND] = 1
 
     return game_data
