@@ -523,6 +523,7 @@ def move_dragons_randomly(game_event: GameEventT):
 
     log_debug("[event system] moving dragons")
     _move_dragons_randomly(game_context)
+    game_sleep(game_context, 1)
 
 def extreme_mode_autoplay_adventurer(game_event: GameEventT):
     """
@@ -537,6 +538,8 @@ def extreme_mode_autoplay_adventurer(game_event: GameEventT):
 
 def game_systems_setup(game_context: GameContextT):
     es: GameEventSystemT = game_context[T_GAME_CTX_GAME_DATA][T_GAME_DATA_EVENT_SYSTEM]
+
+    dragon_update_frequency = "on_frame" if game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_GAME_MODE] == E_GAME_MODE_EXTREME else "on_round_end"
 
     systems = {
         # path calculation and other logic
@@ -556,7 +559,7 @@ def game_systems_setup(game_context: GameContextT):
         ],
         # do dragons movement (move dragons randomly)
         E_PHASE_DRAGONS: [
-            { "on_round_end": move_dragons_randomly },
+            { dragon_update_frequency: move_dragons_randomly },
         ],
         # logic that happens after dragons moved, like collision checks
         E_PHASE_POST_DRAGONS: [

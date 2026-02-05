@@ -71,6 +71,9 @@ def game_event_system_unpause_phase(event_system: GameEventSystemT, phase: GameP
     for event in event_system[phase]:
         event[T_GAME_EVENT_FLAGS] &= ~F_GAME_EVENT_PAUSED
 
+def game_event_system_remove_events(event_system: GameEventSystemT, x):
+    pass
+
 def game_event_system_frame_tick(event_system: GameEventSystemT):
     """
     expected to get called every frame (when we draw game)

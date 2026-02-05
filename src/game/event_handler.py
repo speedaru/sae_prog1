@@ -88,6 +88,8 @@ def handle_event_game(input_event: InputEventT, game_context: GameContextT):
         parsing.save_game(game_context)
     # load saved game
     elif event_info[INPUT_EVENT_INFO_IS_KEY] and event_info[INPUT_EVENT_INFO_KEY_PRESSED] == KEY_I:
+        # clear all temp events
+        
         parsing.load_saved_game(game_context)
 
 def handle_event_game_dungeon(input_event: InputEventT, game_context: GameContextT):
