@@ -69,8 +69,9 @@ T_INPUT_EVENT_COUNT = 2
 # game mode enums
 GameModeE = int
 E_GAME_MODE_NORMAL = 0
-E_GAME_MODE_EXTREME = 1
-E_GAME_MODE_COUNT = 2
+E_GAME_MODE_SINGLE_TURN = 1
+E_GAME_MODE_EXTREME = 2
+E_GAME_MODE_COUNT = 3
 
 # simple dungeon with just the dungeon and whats inside
 DungeonDataT = list[DungeonT | EntitySystemT | int | None]
@@ -141,7 +142,17 @@ def game_context_create(assets,
 def get_game_mode_text(game_mode: GameModeE):
     if game_mode == E_GAME_MODE_NORMAL:
         return "normal"
+    elif game_mode == E_GAME_MODE_SINGLE_TURN:
+        return "single turn"
     elif game_mode == E_GAME_MODE_EXTREME:
         return "extreme"
     else:
         return "unknown"
+
+def get_game_mode_text_color(game_mode: GameModeE):
+    if game_mode == E_GAME_MODE_NORMAL:
+        return "white"
+    elif game_mode == E_GAME_MODE_SINGLE_TURN:
+        return "yellow"
+    elif game_mode == E_GAME_MODE_EXTREME:
+        return "red"

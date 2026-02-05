@@ -188,14 +188,14 @@ def start_moving_adventurer(game_context):
     # add moving flag
     game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_ADVENTURER_MOVING
 
-def extreme_mode_past_first_round(game_context):
+def single_turn_mode_past_first_round(game_context):
     game_data = game_context[T_GAME_CTX_GAME_DATA]
-    return game_data[T_DUNGEON_DATA_GAME_MODE] == E_GAME_MODE_EXTREME and game_data[T_GAME_DATA_ROUND] > 1
+    return game_data[T_DUNGEON_DATA_GAME_MODE] == E_GAME_MODE_SINGLE_TURN and game_data[T_GAME_DATA_ROUND] > 1
 
 # def can_remove_moving_flag(game_context):
 #     """
 #     returns True if game finished
-#         or: path finished AND not in extreme mode
+#         or: path finished AND not in single_turn mode
 #     """
 #     # game finished
 #     game_flags: int = game_context[T_GAME_CTX_GAME_FLAGS]
@@ -208,12 +208,12 @@ def extreme_mode_past_first_round(game_context):
 #     if movement_path_is_valid(adventurer[T_ADVENTURER_PATH]):
 #         return False
 #
-#     # cant remove moving flag in extreme mode (if game not finished)
+#     # cant remove moving flag in single_turn mode (if game not finished)
 #     game_data = game_context[T_GAME_CTX_GAME_DATA]
-#     if game_data[T_GAME_DATA_GAME_MODE] == E_GAME_MODE_EXTREME:
+#     if game_data[T_GAME_DATA_GAME_MODE] == E_GAME_MODE_single_turn:
 #         return False
 #     
-#     # not in extreme mode
+#     # not in single_turn mode
 #     return True
 
 def should_finish_round(game_context: GameContextT) -> bool:
@@ -235,8 +235,8 @@ def rotate_room(event_info: InputEventInfoT, game_context: GameContextT) -> bool
     game_data = game_context[T_GAME_CTX_GAME_DATA]
     dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
 
-    # cant rotate room in extreme mode past round 1
-    if extreme_mode_past_first_round(game_context):
+    # cant rotate room in single_turn mode past round 1
+    if single_turn_mode_past_first_round(game_context):
         return False
 
     clicked_room: RoomPosT | NoneType = _get_clicked_room(event_info, dungeon)
@@ -257,8 +257,8 @@ def place_treasure(event_info: InputEventInfoT, game_context: GameContextT) -> b
     dungeon: DungeonT = game_data[T_DUNGEON_DATA_DUNGEON]
     entity_system: EntitySystemT = game_data[T_DUNGEON_DATA_ENTITY_SYSTEM]
 
-    # cant place treasure in extreme mode past round 1
-    if extreme_mode_past_first_round(game_context):
+    # cant place treasure in single_turn mode past round 1
+    if single_turn_mode_past_first_round(game_context):
         return False
 
     # skip if no more treasures left
@@ -427,7 +427,7 @@ def adventurer_sleep_between_steps(game_event: GameEventT):
 def adventurer_sleep_between_rounds(game_event: GameEventT):
     """
     GAME EVENT
-    sleep in between each (for extreme mode since its on autoplay)
+    sleep in between each (for single_turn mode since its on autoplay)
     """
     game_context: GameContextT = game_event[T_GAME_EVENT_GAME_CTX]
     game_data = game_context[T_GAME_CTX_GAME_DATA]
@@ -437,8 +437,8 @@ def adventurer_sleep_between_rounds(game_event: GameEventT):
     if not (game_flags & F_GAME_ADVENTURER_MOVING):
         return
 
-    # not in extreme mode
-    if game_data[T_DUNGEON_DATA_GAME_MODE] != E_GAME_MODE_EXTREME:
+    # not in single_turn mode
+    if game_data[T_DUNGEON_DATA_GAME_MODE] != E_GAME_MODE_SINGLE_TURN:
         return
 
     # sleep
@@ -521,19 +521,23 @@ def move_dragons_randomly(game_event: GameEventT):
     if bool(game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_GAME_FINISHED):
         return
 
+    # dont move dragons if player moving
+    if game_context[T_GAME_CTX_GAME_FLAGS] & F_GAME_ADVENTURER_MOVING:
+        return
+
     log_debug("[event system] moving dragons")
     _move_dragons_randomly(game_context)
     game_sleep(game_context, 1)
 
-def extreme_mode_autoplay_adventurer(game_event: GameEventT):
+def single_turn_mode_autoplay_adventurer(game_event: GameEventT):
     """
     GAME EVENT
     if past first round then start moving adventurer
     """
     game_ctx = game_event[T_GAME_EVENT_GAME_CTX]
 
-    # if after round 1 in extreme mode and ADVENTURER_MOVING flag not set
-    if extreme_mode_past_first_round(game_ctx) and not bool(game_ctx[T_GAME_CTX_GAME_FLAGS] & F_GAME_ADVENTURER_MOVING):
+    # if after round 1 in single turn mode and ADVENTURER_MOVING flag not set
+    if single_turn_mode_past_first_round(game_ctx) and not bool(game_ctx[T_GAME_CTX_GAME_FLAGS] & F_GAME_ADVENTURER_MOVING):
         start_moving_adventurer(game_ctx)
 
 def game_systems_setup(game_context: GameContextT):
@@ -548,7 +552,7 @@ def game_systems_setup(game_context: GameContextT):
         ],
         # do adventurer movement
         E_PHASE_ADVENTURER: [
-            { "on_frame": extreme_mode_autoplay_adventurer }, # in extreme start moving adventurer automatically
+            { "on_frame": single_turn_mode_autoplay_adventurer }, # in extreme start moving adventurer automatically
             { "on_frame": move_adventurer_along_path }, # move adventurer to next room
         ],
         # path calculation and other special items logic

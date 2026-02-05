@@ -56,7 +56,7 @@ def get_hud_elements(game_context: GameContextT) -> list[HudElementT]:
     # indicate game mode
     game_mode: GameModeE = game_data[T_DUNGEON_DATA_GAME_MODE]
     text = f"Mode de jeu: {get_game_mode_text(game_mode)}"
-    color = "red" if game_mode == E_GAME_MODE_EXTREME else "yellow"
+    color = get_game_mode_text_color(game_mode)
     el_height = _add_hud_element(hud_elements, gui_geom.E_UI_ANCHOR_BOTTOM_LEFT, text, color, bottom_left_offset_y)
     bottom_left_offset_y -= el_height - Y_PAD
 
