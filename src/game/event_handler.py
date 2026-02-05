@@ -41,7 +41,9 @@ def handle_exit_key(input_event: InputEventT, game_context):
         game_context[T_GAME_CTX_GAME_FLAGS] |= F_GAME_EXIT_PROGRAM
         return
 
+    game_mode = game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_GAME_MODE]
     logic.reset_game_context(game_context)
+    game_context[T_GAME_CTX_GAME_DATA][T_DUNGEON_DATA_GAME_MODE] = game_mode
 
 def handle_event_start_menu(input_event: InputEventT, game_context: GameContextT):
     """
