@@ -5,6 +5,7 @@ from src.engine.structs.dungeon import *
 from src.engine.structs.adventurer import *
 from src.engine.structs.chaos_seal import *
 from src.engine.structs.entity import *
+from src.engine.entity_system import *
 
 from src.game.game_definitions import *
 
